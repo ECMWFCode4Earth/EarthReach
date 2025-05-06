@@ -1,3 +1,5 @@
+# EarthReach Agent: Dual-LLM Framework for Validated Meteorological Chart Descriptions
+
 <p align="center">
   <a href="https://opensource.org/licenses/apache-2-0">
     <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
@@ -10,7 +12,7 @@
   </a>
 </p>
 
-# EarthReach
+## EarthReach
 
 EarthReach is a challenge from the 2025 edition dedicated to enhancing the accessibility of meteorological data visualisations produced by Earthkit, by equipping the plots module with LLM-powered alternative text generation capabilities.
 
