@@ -1,0 +1,1 @@
+setuptools>=71.0.0
