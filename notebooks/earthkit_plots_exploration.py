@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.17.1
 #   kernelspec:
 #     display_name: .venv
 #     language: python
@@ -75,29 +75,6 @@ def img_to_base64(image_path: str | None = None, img: Image | None = None) -> st
         return base64.b64encode(img_file.read()).decode("utf-8")
 
 
-# FIX(high): Can't save earthkit-plots figures to a file
-def earthkit_fig_to_pil(figure, format: Literal["JPEG", "PNG"] = "JPEG") -> PIL.Image:
-    """
-    Convert an earthkit-plots figure to a PIL Image
-
-    Args:
-        figure: earthkit-plots figure object
-
-    Returns:
-        PIL Image object
-    """
-    figure._release_queue()
-
-    fig = plt.gcf()  # matplotlib figure
-    fig.canvas.draw()
-
-    buf = BytesIO()
-    fig.savefig(buf, format=format)
-    buf.seek(0)
-
-    return PIL.Image.open(buf)
-
-
 # %% [markdown]
 # ## High-level API
 
@@ -106,8 +83,14 @@ data = ek.data.from_source("sample", "era5-2t-msl-1985122512.grib")
 data.ls()
 
 # %%
-figure = ek.plots.quickplot(data, domain=["France", "Greece"], mode="overlay")
-figure.show()
+buffer = BytesIO()
+ek.plots.quickplot(data, domain=["France", "Greece"], mode="overlay").save(
+    buffer, format="png"
+)
+
+buffer.seek(0)
+
+img = PIL.Image.open(buffer)
 
 # %% [markdown]
 # Observations:
@@ -121,15 +104,17 @@ figure.show()
 # ## Trying a Simple VLLM Summary Generation
 
 # %%
-assert os.environ.get("GROQ_API_KEY", None), "GROQ_API_KEY is not set."
+assert os.environ.get("GROQ_API_KEY"), (
+    "GROQ_API_KEY not set. Please set it in your environment variables."
+)
 client = openai.OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=os.environ.get("GROQ_API_KEY"),  # Using GROQ free API provider
 )
 
 # %%
-img_path = Path().cwd().parent / "data" / "temperature_pressure_france_greece.png"
-base64_image = img_to_base64(image_path=img_path)
+# img_path = Path().cwd().parent / 'data' / 'temperature_pressure_france_greece.png'
+base64_image = img_to_base64(img=img)
 
 response = client.chat.completions.create(
     model="meta-llama/llama-4-maverick-17b-128e-instruct",  # vision-enabled chat model
