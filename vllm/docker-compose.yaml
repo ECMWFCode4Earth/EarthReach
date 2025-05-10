@@ -1,0 +1,33 @@
+services:
+  caddy:
+    image: caddy
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${CADDY_FILE_PATH}:/etc/caddy/Caddyfile
+      - ${CADDY_DATA_DIR}:/data
+      - ${CADDY_CONFIG_DIR}:/config
+    environment:
+      - DOMAIN=${DOMAIN}
+    depends_on:
+      - vllm-server
+
+  vllm-server:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-server
+    restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ${HF_CACHE_DIR}:/root/.cache/huggingface
+    ipc: host
+    command: --model ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${API_KEY} 

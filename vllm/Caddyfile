@@ -1,0 +1,9 @@
+{$DOMAIN} {
+    # Redirect HTTP to HTTPS
+    redir https://{host}{uri} permanent
+}
+
+https://{$DOMAIN} {
+    # HTTPS with auto SSL provisioning
+    reverse_proxy vllm-server:{$VLLM_PORT}
+}
