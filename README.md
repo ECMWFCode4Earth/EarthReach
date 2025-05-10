@@ -16,6 +16,14 @@
 
 EarthReach is a challenge from the 2025 edition dedicated to enhancing the accessibility of meteorological data visualisations produced by Earthkit, by equipping the plots module with LLM-powered alternative text generation capabilities.
 
+## Installation
+
+### LLM Inference Server
+
+To run this project, you will need to have an openAI-compatible LLM inference server. 
+
+We provide instructions on how to set your own secured inference server using [VLLM](./vllm/setup.md).
+
 ## License
 
 See [LICENSE](LICENSE)
