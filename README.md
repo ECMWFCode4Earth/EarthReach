@@ -18,7 +18,7 @@ EarthReach is a challenge from the 2025 edition dedicated to enhancing the acces
 
 ## Installation
 
-### LLM Inference Server
+### VLLM Inference Server
 
 To run this project, you will need to have an openAI-compatible LLM inference server. 
 

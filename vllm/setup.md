@@ -58,9 +58,9 @@ sudo firewall-cmd --list-all
 
 ### Nvidia Runtime
 
-Make sure the drivers for your GPU are correctly installed.
+Make sure the drivers and NVIDIA CUDA Runtime for your GPU are correctly installed and up-to-date.
 
-Then run:
+Then run the following commands to install the NVIDIA runtime for docker containers:
 
 ```sh
 # Configure production repository
