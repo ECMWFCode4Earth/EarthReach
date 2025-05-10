@@ -30,7 +30,7 @@ sudo dnf install -y docker-ce \
 # Enable and start Docker
 sudo systemctl enable --now docker
 
-# Configure production repository
+# Configure production repository for nvidia-container-toolkit
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
 curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.repo | \
   sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
