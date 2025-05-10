@@ -30,6 +30,20 @@ sudo dnf install -y docker-ce \
 # Enable and start Docker
 sudo systemctl enable --now docker
 
+# Configure production repository
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.repo | \
+  sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
+
+# Install nvidia container toolkit
+sudo dnf install -y nvidia-container-toolkit
+
+# Configure the nvidia runtime for docker containers 
+sudo nvidia-ctk runtime configure --runtime=docker
+
+# Restart docker
+sudo systemctl docker restart
+
 # Create necessary Caddy directories
 mkdir -p $CADDY_DATA_DIR $CADDY_CONFIG_DIR
 

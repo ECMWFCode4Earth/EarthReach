@@ -56,6 +56,27 @@ sudo firewall-cmd --reload
 sudo firewall-cmd --list-all
 ```
 
+### Nvidia Runtime
+
+Make sure the drivers for your GPU are correctly installed.
+
+Then run:
+
+```sh
+# Configure production repository
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo | \
+  sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
+
+# Install nvidia container toolkit
+sudo dnf install -y nvidia-container-toolkit
+
+# Configure the nvidia runtime for docker containers 
+sudo nvidia-ctk runtime configure --runtime=docker
+
+# Restart docker
+sudo systemctl docker restart
+```
+
 ### Docker
 
 ```sh
