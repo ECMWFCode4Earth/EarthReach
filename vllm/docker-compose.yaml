@@ -16,7 +16,10 @@ services:
       - vllm-server
 
   vllm-server:
-    image: vllm/vllm-openai:latest
+    image: vllm-server
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: vllm-server
     restart: unless-stopped
     runtime: nvidia
@@ -28,6 +31,6 @@ services:
               count: all
               capabilities: [gpu]
     volumes:
-      - ${HF_CACHE_DIR}:/root/.cache/huggingface
+      - ${HF_CACHE_DIR}:/app/.cache/huggingface
     ipc: host
-    command: --model ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
+    command: vllm serve --model ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
