@@ -35,4 +35,4 @@ services:
     environment:
       - HF_HUB_TOKEN=${HF_HUB_TOKEN}
     ipc: host
-    command: vllm serve --model ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
+    command: vllm serve ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
