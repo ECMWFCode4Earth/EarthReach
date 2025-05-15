@@ -7,7 +7,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ${CADDY_FILE_PATH}:/etc/caddy/Caddyfile
+      - ${CADDY_FILE_PATH}:/etc/caddy/Caddyfile:ro
       - ${CADDY_DATA_DIR}:/data
       - ${CADDY_CONFIG_DIR}:/config
     environment:
@@ -32,5 +32,7 @@ services:
               capabilities: [gpu]
     volumes:
       - ${HF_CACHE_DIR}:/app/.cache/huggingface
+    environment:
+      - HF_HUB_TOKEN=${HF_HUB_TOKEN}
     ipc: host
     command: vllm serve --model ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
