@@ -33,6 +33,6 @@ services:
     volumes:
       - ${HF_CACHE_DIR}:/app/.cache/huggingface
     environment:
-      - HF_HUB_TOKEN=${HF_HUB_TOKEN}
+      - HF_HOME=/app/.cache/huggingface
     ipc: host
-    command: vllm serve ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
+    command: vllm serve ${MODEL_DIR_PATH} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 

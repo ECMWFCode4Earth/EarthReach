@@ -49,5 +49,15 @@ mkdir -p $CADDY_DATA_DIR $CADDY_CONFIG_DIR
 
 # Copy the Caddyfile to the config directory
 cp ./Caddyfile $CADDY_FILE_PATH
+ 
+# Install uv python manager
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create Huggingface cache directory
+mkdir -p $HF_CACHE_DIR
+
+# Install HF-CLI and download the model to the cache directory
+uv run --with "huggingface_hub[cli]" huggingface-cli login --token $HF_HUB_TOKEN
+uv run --with "huggingface_hub[cli]" huggingface-cli download $MODEL_NAME --cache-dir=$HF_CACHE_DIR 
 
 echo "Setup complete! You can now run 'sudo docker compose up -d'"
