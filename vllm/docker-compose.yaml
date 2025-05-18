@@ -12,6 +12,7 @@ services:
       - ${CADDY_CONFIG_DIR}:/config
     environment:
       - DOMAIN=${DOMAIN}
+      - VLLM_PORT=${VLLM_PORT}
     depends_on:
       - vllm-server
 
@@ -23,6 +24,8 @@ services:
     container_name: vllm-server
     restart: unless-stopped
     runtime: nvidia
+    ports:
+      - 8000:${VLLM_PORT}
     deploy:
       resources:
         reservations:
@@ -35,4 +38,4 @@ services:
     environment:
       - HF_HOME=/app/.cache/huggingface
     ipc: host
-    command: vllm serve ${MODEL_DIR_PATH} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
+    command: vllm serve ${MODEL_DIR_PATH} --served-model-name ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
