@@ -38,7 +38,7 @@ from PIL.Image import Image
 
 load_dotenv(Path().cwd().parent / ".env")
 
-warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore")
 
 
 # %%
@@ -71,26 +71,142 @@ def img_to_base64(image_path: str | None = None, img: Image | None = None) -> st
         img.save(bytes_io, format="PNG")
         return base64.b64encode(bytes_io.getvalue()).decode("utf-8")
 
-    with open(image_path, "rb") as img_file:
+    with open(image_path, "rb") as img_file:  # type: ignore
         return base64.b64encode(img_file.read()).decode("utf-8")
 
 
+# %%
+assert os.environ.get("GROQ_API_KEY"), (
+    "GROQ_API_KEY not set. Please set it in your environment variables."
+)
+client = openai.OpenAI(
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.environ.get("GROQ_API_KEY"),  # Using GROQ free API provider
+)
+
+MODEL_NAME = (
+    "meta-llama/llama-4-maverick-17b-128e-instruct"  # vision-enabled chat model
+)
+
+
+def call_api(user_prompt: str, image: Image):
+    """Call the LLM generation API"""
+    base64_image = img_to_base64(img=image)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": user_prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}",
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+        description = response.choices[0].message.content
+
+        if not description:
+            raise ValueError("The description generated is empty")
+
+        return description
+
+    except Exception as e:
+        print("Encountered unexpected error when calling the api: {e}")
+        raise e
+
+
 # %% [markdown]
-# ## High-level API
+# ## Loading Data
 
 # %%
+from earthkit.data import cache, config
+
+config.set("cache-policy", "user")
+cache.directory()
+
+# %%
+# Example, quickly accessible data
 data = ek.data.from_source("sample", "era5-2t-msl-1985122512.grib")
 data.ls()
 
 # %%
+# Copernicus datastore, requires API key set
+dataset = "reanalysis-era5-single-levels"
+request = {
+    "product_type": ["reanalysis"],
+    "variable": ["2m_temperature", "mean_sea_level_pressure"],
+    "year": ["2024"],
+    "month": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"],
+    "day": ["01"],
+    "time": ["12:00"],
+    "data_format": "grib",
+    "download_format": "unarchived",
+}
+
+data = ek.data.from_source("cds", dataset, request)
+data.ls()
+
+# %% [markdown]
+# ## Exploring GRIB data
+
+# %% [markdown]
+# When loaded through the `.from_source()` method, a GRIB file will yield a `GribFielList` object. Documentation available [here](https://earthkit-data.readthedocs.io/en/latest/guide/data_format/grib.html)
+#
+# Some information about fields and GRIB data:
+# - The fields can be iterated through with for loops
+# - A field represents a single meteorological phenomenon (like temperature), measured at a certain time, at a certain height, from a certain center
+
+# %%
+len(data)  # Number of fields
+
+# %%
+data.head()  # List first 5 fields and "some" metadata for each field
+
+# %%
+data.ls()  # List all fields and *some* metadata for each field
+
+# %%
+data.describe()  # Describe the fields
+
+# %%
+data[0].dump()  # Access different metadata namespaces
+
+# %%
+data[0].metadata(namespaces="statistics")
+
+# %%
+data.indices()  # List of the metadata and the values they can take
+
+# %% [markdown]
+# ## Earthkit-plot Quickplot API
+
+# %%
+data.head()
+
+# %%
+# Sub-select the data
+sub_data = data.sel(param=["2t", "msl"], typeOfLevel="surface", dataDate=20240101)
+sub_data.head()
+
+# %%
 buffer = BytesIO()
-ek.plots.quickplot(data, domain=["France", "Greece"], mode="overlay").save(
-    buffer, format="png"
-)
+figure = ek.plots.quickplot(sub_data, domain=["France", "Greece"], mode="overlay")
+
+figure.save(buffer, format="png")
 
 buffer.seek(0)
 
 img = PIL.Image.open(buffer)
+
+# %%
+figure.title()  # TODO: extract the string title
 
 # %% [markdown]
 # Observations:
@@ -103,39 +219,6 @@ img = PIL.Image.open(buffer)
 # %% [markdown]
 # ## Trying a Simple VLLM Summary Generation
 
-# %%
-assert os.environ.get("GROQ_API_KEY"), (
-    "GROQ_API_KEY not set. Please set it in your environment variables."
-)
-client = openai.OpenAI(
-    base_url="https://api.groq.com/openai/v1",
-    api_key=os.environ.get("GROQ_API_KEY"),  # Using GROQ free API provider
-)
-
-# %%
-# img_path = Path().cwd().parent / 'data' / 'temperature_pressure_france_greece.png'
-base64_image = img_to_base64(img=img)
-
-response = client.chat.completions.create(
-    model="meta-llama/llama-4-maverick-17b-128e-instruct",  # vision-enabled chat model
-    messages=[
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "What's in this image?"},
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}",
-                    },
-                },
-            ],
-        }
-    ],
-)
-
-display_markdown(response.choices[0].message.content)
-
 # %% [markdown]
 # Observations (from a very simple prompt):
 # - Good structured and objective documentation of visual elements
@@ -146,17 +229,22 @@ display_markdown(response.choices[0].message.content)
 # These first observations are promising. We now need to try a generation with a more specialized prompt, including best prompt-engineering techniques from the start.
 
 # %%
-# TODO: add the method (COT), response format, examples. The model boasts a huge context window so we should take advantage of it.
-prompt = """# Instructions for Describing Meteorological Visualizations for Blind Scientists
+task_prompt = """# Instructions for Describing Meteorological Visualizations for Blind Scientists
 
-Your task is to create a comprehensive, scientifically accurate description of meteorological visualizations that will be accessible to blind scientists. Follow these detailed guidelines:
+Your task is to create a comprehensive, scientifically accurate description of meteorological visualizations that will be accessible to blind scientists. 
 
-## 1. Structural Organization
+"""
+
+requirements_prompt = """## Requirements
+
+Here are requirements that you will have to follow rigorously when writing your description.
+
+### 1. Structural Organization
 - Begin with a concise overview (2-3 sentences) stating the visualization type, geographic region, time period, and primary variables displayed.
 - Organize your description hierarchically from most to least scientifically significant features.
 - Structure your description in clearly defined sections with standardized headings.
 
-## 2. Scientific Content Requirements
+### 2. Scientific Content Requirements
 - Use precise meteorological terminology consistent with scientific publications.
 - Always include quantitative values with appropriate units (hPa for pressure, K/°C for temperature).
 - Describe patterns and gradients rather than individual data points.
@@ -164,36 +252,60 @@ Your task is to create a comprehensive, scientifically accurate description of m
 - Identify and describe major meteorological features (high/low pressure systems, fronts, temperature gradients).
 - Include geographic context using cardinal directions and recognized regional references.
 
-## 3. Spatial Relationship Guidelines
+### 3. Spatial Relationship Guidelines
 - Systematically describe the geographic distribution of data using cardinal directions (N, S, E, W, NE, etc.).
 - Reference latitude and longitude coordinates when describing specific features.
 - Describe gradients and transitions using directional language (e.g., "increasing from south to north").
 - Use recognized geographic features (countries, seas, mountain ranges) as reference points.
 
-## 4. Pattern Description Protocol
+### 4. Pattern Description Protocol
 - Identify dominant patterns for each variable (e.g., pressure systems, temperature fronts).
 - Describe the spatial relationships between different variables (e.g., how temperature aligns with pressure systems).
 - Communicate the intensity of gradients, using terms like "sharp gradient," "gentle slope," or "uniform distribution."
 - Note any anomalies or unusual features in the data pattern.
 
-## 5. Technical Elements
+### 5. Technical Elements
 - Describe the scale and units prominently displayed in the visualization.
 - Explain the visualization technique used for each variable (e.g., color gradient for temperature, contour lines for pressure).
 - Note the resolution and any apparent limitations of the data.
 
-## 6. Scientific Context
+### 6. Scientific Context
 - Include relevant seasonal context (e.g., winter conditions for December visualization).
 - Provide brief meteorological context for the significance of the date, if applicable.
 - Relate the patterns shown to typical or expected meteorological conditions for the region and season.
 
-## 7. Accessibility-Specific Considerations
+### 7. Accessibility-Specific Considerations
 - Use clear, unambiguous language that doesn't rely on visual references.
 - Avoid phrases like "as you can see" or "looking at the map."
 - Use directional and relative terms that don't require visual understanding.
 - Ensure all information conveyed by color is also expressed verbally in terms of values and patterns.
 
-## 8. Language Style
+### 8. Language Style
 - Maintain a formal, scientific tone throughout.
 - Use precise, concise language without unnecessary elaboration.
 - Be objective in descriptions, clearly differentiating between observed data and interpretations.
+
 """
+
+method_prompt = """## Method
+
+To achieve this task, you will reflect on the meteorological visualizations and the metadata provided, step by step, critically, and without omitting any detail, to make sure you understand them and the key information they convey.
+
+Once you've completed your full breakdown of the visualization and the metadata, you should be able to write a comprehensive, scientifically accurate description of the visualization. 
+
+So you will once again start a reflection process, to plan what you will convey and how you will convey it in the desciption, in order to respect the requirements established previously 
+
+"""
+
+format_prompt = """"""
+
+examples_prompt = """"""
+
+user_prompt = (
+    task_prompt + requirements_prompt + method_prompt + format_prompt + examples_prompt
+)
+
+# %%
+description = call_api(user_prompt, img)
+
+display_markdown(description)
