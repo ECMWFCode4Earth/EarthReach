@@ -235,6 +235,21 @@ Your task is to create a comprehensive, scientifically accurate description of m
 
 """
 
+method_prompt = """## Method
+
+To achieve this task, you will work in two three steps. 
+1. Understanding the information of the visualization
+2. Planning your description
+3. Writing your description
+
+First,reflect on the meteorological visualizations and the metadata provided, step by step, critically, and without omitting any detail, to make sure you understand them and the key information they convey.
+
+Once you've completed your full breakdown of the visualization and the metadata, you should be able to write a comprehensive, scientifically accurate description of the visualization. 
+
+So you will once again start a reflection process, to plan what you will convey and how you will convey it in the desciption, in order to respect the requirements established previously 
+
+"""
+
 requirements_prompt = """## Requirements
 
 Here are requirements that you will have to follow rigorously when writing your description.
@@ -287,22 +302,12 @@ Here are requirements that you will have to follow rigorously when writing your 
 
 """
 
-method_prompt = """## Method
-
-To achieve this task, you will reflect on the meteorological visualizations and the metadata provided, step by step, critically, and without omitting any detail, to make sure you understand them and the key information they convey.
-
-Once you've completed your full breakdown of the visualization and the metadata, you should be able to write a comprehensive, scientifically accurate description of the visualization. 
-
-So you will once again start a reflection process, to plan what you will convey and how you will convey it in the desciption, in order to respect the requirements established previously 
-
-"""
-
 format_prompt = """"""
 
 examples_prompt = """"""
 
 user_prompt = (
-    task_prompt + requirements_prompt + method_prompt + format_prompt + examples_prompt
+    task_prompt + method_prompt + requirements_prompt + format_prompt + examples_prompt
 )
 
 # %%
