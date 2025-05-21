@@ -26,20 +26,25 @@ import os
 import warnings
 from io import BytesIO
 from pathlib import Path
-from typing import Literal
+import pandas as pd
 
+from earthkit.data import cache, config
 import earthkit as ek
-import matplotlib.pyplot as plt
 import openai
-import PIL
+from PIL import Image
 from dotenv import load_dotenv
 from IPython.display import Markdown, display
-from PIL.Image import Image
 
 load_dotenv(Path().cwd().parent / ".env")
 
 warnings.filterwarnings("ignore")
 
+config.set("cache-policy", "user")
+print("cache:", cache.directory())
+
+
+# %% [markdown]
+# ## Definitions
 
 # %%
 def display_markdown(text: str) -> None:
@@ -89,7 +94,7 @@ MODEL_NAME = (
 )
 
 
-def call_api(user_prompt: str, image: Image):
+def call_api(user_prompt: str, image) -> str:
     """Call the LLM generation API"""
     base64_image = img_to_base64(img=image)
     try:
@@ -126,12 +131,6 @@ def call_api(user_prompt: str, image: Image):
 # ## Loading Data
 
 # %%
-from earthkit.data import cache, config
-
-config.set("cache-policy", "user")
-cache.directory()
-
-# %%
 # Example, quickly accessible data
 data = ek.data.from_source("sample", "era5-2t-msl-1985122512.grib")
 data.ls()
@@ -139,19 +138,110 @@ data.ls()
 # %%
 # Copernicus datastore, requires API key set
 dataset = "reanalysis-era5-single-levels"
-request = {
-    "product_type": ["reanalysis"],
-    "variable": ["2m_temperature", "mean_sea_level_pressure"],
-    "year": ["2024"],
-    "month": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"],
-    "day": ["01"],
-    "time": ["12:00"],
-    "data_format": "grib",
-    "download_format": "unarchived",
+
+
+def get_weather_data(date: str):
+    date_list = date.split("/")
+
+    request = {
+        "product_type": ["reanalysis"],
+        "variable": ["2m_temperature", "mean_sea_level_pressure"],
+        "day": [date_list[0]],
+        "month": [date_list[1]],
+        "year": [date_list[2]],
+        "time": ["12:00"],
+        "data_format": "grib",
+        "download_format": "unarchived",
+    }
+
+    data = ek.data.from_source("cds", dataset, request)
+
+    return data
+
+
+event_date = "12/03/2011"
+data = get_weather_data(event_date)
+
+data.ls()
+
+# %% [markdown]
+# ## Generating Plots from Interesting Weather Events
+
+# %%
+# NOTE: those dates are probably most relevant for temperature but are they also for pressure ?
+#       Maybe we should consider events that have two interesting events ?
+#       Possible configurations: interesting event present / not present, parameter shown / not shown
+weather_events = {
+    "average_days": {"global": ["12/03/2011", "20/07/2010", "05/11/2003"]},
+    "cold_days": {"global": ["13/03/1976", "21/07/1943", "05/11/1975"]},
+    "hot_days": {"global": ["14/03/2024", "22/07/2024", "08/11/2023"]},
+    "heatwave": {"France": ["30/04/2025"], "Arctic": ["17/04/2015"]},
+    "cold_wave": {"United States": ["31/01/2019"], "Europe": ["27/02/2018"]},
 }
 
-data = ek.data.from_source("cds", dataset, request)
-data.ls()
+
+# %%
+def save_weather_event_images(weather_events, output_dir="weather_images"):
+    """
+    Save weather event images and create a CSV mapping file.
+
+    Args:
+        weather_events: Dictionary of weather events
+        output_dir: Directory to save the images and CSV file
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    figure_metadata = []
+    figure_id = 1
+    try:
+        for event_type, domains in weather_events.items():
+            for domain_type, dates in domains.items():
+                for date_str in dates:
+                    data = get_weather_data(date_str)
+
+                    sub_data = data.sel(param=["2t", "msl"], typeOfLevel="surface")
+
+                    plot_domain = (
+                        "Europe" if domain_type.lower() == "global" else domain_type
+                    )
+
+                    buffer = BytesIO()
+                    figure = ek.plots.quickplot(
+                        sub_data,
+                        domain=[plot_domain],
+                        units=["celsius", "hPa"],
+                        mode="overlay",
+                    )
+                    figure.save(buffer, format="png")
+
+                    image_filename = f"figure_{figure_id}.png"
+                    image_path = os.path.join(output_dir, image_filename)
+                    buffer.seek(0)
+                    img = Image.open(buffer)
+                    img.save(image_path)
+
+                    figure_metadata.append(
+                        {
+                            "figure_id": figure_id,
+                            "event_type": event_type,
+                            "domain_type": domain_type,
+                            "date": date_str,
+                        }
+                    )
+
+                    figure_id += 1
+    except:
+        pass
+
+    metadata_df = pd.DataFrame(figure_metadata)
+    csv_path = os.path.join(output_dir, "figure_metadata.csv")
+    metadata_df.to_csv(csv_path, index=False)
+
+    print(f"Saved {figure_id - 1} figures and metadata to {output_dir}")
+    return metadata_df
+
+
+metadata_df = save_weather_event_images(weather_events)
 
 # %% [markdown]
 # ## Exploring GRIB data
@@ -192,12 +282,12 @@ data.head()
 
 # %%
 # Sub-select the data
-sub_data = data.sel(param=["2t", "msl"], typeOfLevel="surface", dataDate=20240101)
+sub_data = data.sel(param=["2t", "msl"], typeOfLevel="surface")
 sub_data.head()
 
 # %%
 buffer = BytesIO()
-figure = ek.plots.quickplot(sub_data, domain=["France", "Greece"], mode="overlay")
+figure = ek.plots.quickplot(sub_data, domain=["France"], mode="overlay")
 
 figure.save(buffer, format="png")
 
