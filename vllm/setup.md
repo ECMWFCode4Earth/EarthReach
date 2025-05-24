@@ -93,6 +93,7 @@ sudo dnf install -y docker-ce \
 sudo systemctl enable --now docker
 ```
 
+TODO: replace caddy configuration with traefik configuration instructions
 ### Caddy
 
 ```sh

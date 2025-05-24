@@ -44,6 +44,7 @@ sudo nvidia-ctk runtime configure --runtime=docker
 # Restart docker
 sudo systemctl docker restart
 
+# TODO: replace caddy automated configuration with traefik
 # Create necessary Caddy directories
 mkdir -p $CADDY_DATA_DIR $CADDY_CONFIG_DIR
 
