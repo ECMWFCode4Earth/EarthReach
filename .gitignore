@@ -13,6 +13,9 @@ wheels/
 .ipynb_checkpoints/
 *.ipynb
 
+# Data
+weather_images/
+
 # Environment variables file
 .env
 

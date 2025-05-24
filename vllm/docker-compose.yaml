@@ -1,21 +1,4 @@
 services:
-  caddy:
-    image: caddy
-    container_name: caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ${CADDY_FILE_PATH}:/etc/caddy/Caddyfile:ro
-      - ${CADDY_DATA_DIR}:/data
-      - ${CADDY_CONFIG_DIR}:/config
-    environment:
-      - DOMAIN=${DOMAIN}
-      - VLLM_PORT=${VLLM_PORT}
-    depends_on:
-      - vllm-server
-
   vllm-server:
     image: vllm-server
     build:
@@ -23,9 +6,14 @@ services:
       dockerfile: Dockerfile
     container_name: vllm-server
     restart: unless-stopped
+    command: |
+      vllm serve ${MODEL_DIR_PATH} \
+        --served-model-name ${MODEL_NAME} \
+        --port ${VLLM_PORT} \
+        --api-key ${VLLM_SERVER_API_KEY}
+    #ports:
+      #- 8000:${VLLM_PORT} # Enable for debugging
     runtime: nvidia
-    ports:
-      - 8000:${VLLM_PORT}
     deploy:
       resources:
         reservations:
@@ -38,4 +26,56 @@ services:
     environment:
       - HF_HOME=/app/.cache/huggingface
     ipc: host
-    command: vllm serve ${MODEL_DIR_PATH} --served-model-name ${MODEL_NAME} --port ${VLLM_PORT} --api-key ${VLLM_SERVER_API_KEY} 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vllm-server.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.vllm-server.tls=true"
+      - "traefik.http.routers.vllm-server.entrypoints=https"
+      - "traefik.http.routers.vllm-server.tls.certresolver=cloudflare"
+      - "traefik.http.routers.vllm-server.tls.domains[0].main=${DOMAIN}"
+      - "traefik.http.routers.vllm-server.tls.domains[0].sans=*.${DOMAIN}"
+      - "traefik.http.services.vllm-server.loadbalancer.server.port=${VLLM_PORT}"
+      
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      # ----- Basic config -----
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # ----- Set up HTTP(S) and redirects (to force HTTPS) -----
+      - "--entrypoints.http.address=:80"
+      - "--entrypoints.https.address=:443"
+      - "--entrypoints.http.http.redirections.entryPoint.to=https"
+      - "--entrypoints.http.http.redirections.entryPoint.scheme=https"
+      # ----- Prevents insecure headers forwarding -----
+      - "--entryPoints.http.forwardedHeaders.insecure=false"
+      - "--entryPoints.http.proxyProtocol.insecure=false"
+      - "--entryPoints.https.forwardedHeaders.insecure=false"
+      - "--entryPoints.https.proxyProtocol.insecure=false"
+      # ----- Set up TLS with LetsEncrypt -----
+      - "--certificatesresolvers.cloudflare.acme.dnsChallenge.provider=cloudflare"
+      - "--certificatesresolvers.cloudflare.acme.email=${CF_API_EMAIL}"
+      - "--certificatesresolvers.cloudflare.acme.storage=/var/cert/acme.json"
+      # ----- Logging & Debugging & API -----
+      - "--log=true"
+      - "--log.level=DEBUG" # Can be ERROR (default), DEBUG, PANIC, FATAL, WARN, and INFO
+      - "--api=false"
+      - "--api.dashboard=false"
+      - "--api.insecure=false" # Set to true to access the dashboard locally
+      - "--pilot.dashboard=false"
+      - "--global.sendAnonymousUsage=false"
+      - "--global.checkNewVersion=false"
+    ports:
+      - 80:80
+      - 443:443
+      # - 8080:8080 # Enable to access the dashboard locally
+    environment:
+      - CF_API_EMAIL=${CF_API_EMAIL}
+      - CF_API_KEY=${CF_API_KEY}
+    volumes:
+      - ${TRAEFIK_ROOT_DIR}/traefik/cert:/var/cert
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - vllm-server
