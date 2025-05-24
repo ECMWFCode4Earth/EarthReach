@@ -11,6 +11,7 @@ sudo systemctl start firewalld
 sudo systemctl enable firewalld
 
 # Add SSH, HTTP and HTTPS services
+# TODO(high): update to only accept requests from cloudflare servers for requests other than SSH 
 sudo firewall-cmd --permanent --add-service=ssh
 sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --permanent --add-service=https

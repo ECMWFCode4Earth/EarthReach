@@ -32,6 +32,7 @@ sudo dnf upgrade
 
 Let's allow HTTP, HTTPS connections and deny the other types by default.
 
+TODO(high): update to only accept requests from cloudflare servers for requests other than SSH 
 
 ```sh
 # Install firewalld 
