@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "earthreach-agent-challenge"
+name = "earth-reach-agent"
 version = "0.1.0"
 description = "EarthReach Agent: Dual-LLM Framework for Validated Meteorological Chart Descriptions"
 readme = "README.md"
@@ -24,4 +24,4 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/earthreach-agent"]
+packages = ["src/earth_reach_agent"]

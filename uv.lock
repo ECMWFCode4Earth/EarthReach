@@ -463,6 +463,41 @@ wheels = [
 ]
 
 [[package]]
+name = "earth-reach-agent"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "earthkit" },
+    { name = "earthkit-data" },
+    { name = "earthkit-plots" },
+    { name = "hatchling" },
+    { name = "openai" },
+    { name = "python-dotenv" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+    { name = "jupytext" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "earthkit", specifier = ">=0.10.3" },
+    { name = "earthkit-data", specifier = ">=0.13.8" },
+    { name = "earthkit-plots", specifier = ">=0.3.1" },
+    { name = "hatchling", specifier = ">=1.27.0" },
+    { name = "openai", specifier = ">=1.77.0" },
+    { name = "python-dotenv", specifier = ">=1.1.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "jupytext", specifier = ">=1.17.1" },
+]
+
+[[package]]
 name = "earthkit"
 version = "0.10.3"
 source = { registry = "https://pypi.org/simple" }
@@ -634,41 +669,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2e/6a/ba0501bb108d395fd0323c94e87dd488d03b31634911efe98a34fbaf1d60/earthkit_transforms-0.4.0.tar.gz", hash = "sha256:ab89f345d626999b3200c38457868664fba72acba164c78ab472cc1c0305e017", size = 1328074 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/f9/1ca7480e4a22d39d884c3fa855cb7fb8cf922c5cba203905efcdf6a67a42/earthkit_transforms-0.4.0-py3-none-any.whl", hash = "sha256:258df72cdbe3c662edab37226013a45c44a907a117afb64c8065eb49617ce2a7", size = 34480 },
-]
-
-[[package]]
-name = "earthreach-agent-challenge"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "earthkit" },
-    { name = "earthkit-data" },
-    { name = "earthkit-plots" },
-    { name = "hatchling" },
-    { name = "openai" },
-    { name = "python-dotenv" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-    { name = "jupytext" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "earthkit", specifier = ">=0.10.3" },
-    { name = "earthkit-data", specifier = ">=0.13.8" },
-    { name = "earthkit-plots", specifier = ">=0.3.1" },
-    { name = "hatchling", specifier = ">=1.27.0" },
-    { name = "openai", specifier = ">=1.77.0" },
-    { name = "python-dotenv", specifier = ">=1.1.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "jupytext", specifier = ">=1.17.1" },
 ]
 
 [[package]]
