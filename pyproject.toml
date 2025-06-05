@@ -15,6 +15,7 @@ dependencies = [
     "openai>=1.77.0",
     "python-dotenv>=1.1.0",
     "hatchling>=1.27.0",
+    "fire @ git+https://github.com/google/python-fire.git@2025-03-23-ipython",
 ]
 
 [dependency-groups]
@@ -23,5 +24,12 @@ dev = [
     "ipykernel>=6.29.5",
 ]
 
+[project.scripts]
+earth-reach-agent = "earth_reach_agent.main:cli"
+era = "earth_reach_agent.main:cli"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/earth_reach_agent"]
+
+[tool.hatch.metadata]
+allow-direct-references = true

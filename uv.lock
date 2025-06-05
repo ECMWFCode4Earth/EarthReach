@@ -470,6 +470,7 @@ dependencies = [
     { name = "earthkit" },
     { name = "earthkit-data" },
     { name = "earthkit-plots" },
+    { name = "fire" },
     { name = "hatchling" },
     { name = "openai" },
     { name = "python-dotenv" },
@@ -486,6 +487,7 @@ requires-dist = [
     { name = "earthkit", specifier = ">=0.10.3" },
     { name = "earthkit-data", specifier = ">=0.13.8" },
     { name = "earthkit-plots", specifier = ">=0.3.1" },
+    { name = "fire", git = "https://github.com/google/python-fire.git?rev=2025-03-23-ipython" },
     { name = "hatchling", specifier = ">=1.27.0" },
     { name = "openai", specifier = ">=1.77.0" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
@@ -771,6 +773,14 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/29/66/4ed4652c0f91dceb13403192793caaf1d58c28296b1f5af5efaea63e2616/findlibs-0.1.1.tar.gz", hash = "sha256:dc7a0d4fe2bb6635f1e4bdcde60aecec42b6755c4783c2f629069c2f9321d732", size = 11284 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/f8/945427d587d3d3ec6dea3297f5a5b6b1cd4c5e126d0638cb148d3c360487/findlibs-0.1.1-py3-none-any.whl", hash = "sha256:1b611a040d41e491049568e530c7e032f5c2be8f582386961b8d14a6936406a9", size = 10713 },
+]
+
+[[package]]
+name = "fire"
+version = "0.7.0"
+source = { git = "https://github.com/google/python-fire.git?rev=2025-03-23-ipython#0ae088aabc1809bc298ef80488e613aac76274aa" }
+dependencies = [
+    { name = "termcolor" },
 ]
 
 [[package]]
@@ -2275,6 +2285,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/28/e3/55dcc2cfbc3ca9c29519eb6884dd1415ecb53b0e934862d3559ddcb7e20b/stack_data-0.6.3.tar.gz", hash = "sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9", size = 44707 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl", hash = "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695", size = 24521 },
+]
+
+[[package]]
+name = "termcolor"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ca/6c/3d75c196ac07ac8749600b60b03f4f6094d54e132c4d94ebac6ee0e0add0/termcolor-3.1.0.tar.gz", hash = "sha256:6a6dd7fbee581909eeec6a756cff1d7f7c376063b14e4a298dc4980309e55970", size = 14324 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4f/bd/de8d508070629b6d84a30d01d57e4a65c69aa7f5abe7560b8fad3b50ea59/termcolor-3.1.0-py3-none-any.whl", hash = "sha256:591dd26b5c2ce03b9e43f391264626557873ce1d379019786f99b0c2bee140aa", size = 7684 },
 ]
 
 [[package]]

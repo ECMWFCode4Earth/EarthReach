@@ -1,4 +1,4 @@
-user_prompt = """# Enhanced Weather Chart Alt-Text Generation System
+DEFAULT_USER_PROMPT = """# Enhanced Weather Chart Alt-Text Generation System
 
 ## ROLE AND CONTEXT SETTING
 

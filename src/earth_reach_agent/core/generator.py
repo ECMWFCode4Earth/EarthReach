@@ -1,21 +1,8 @@
 import re
-from dataclasses import dataclass
-from typing import List, Optional
+from dataclasses import dataclass, fields
+from typing import List
 
 from earth_reach_agent.core.llm import BaseLLM
-
-
-class GeneratorAgent:
-    """GeneratorAgent class for generating weather charts scientific descriptions."""
-
-    def __init__(self, llm: BaseLLM) -> None:
-        """
-        Initialize the GeneratorAgent with a BaseLLM instance.
-
-        Args:
-            llm (BaseLLM): An instance of a BaseLLM to handle LLM interactions.
-        """
-        self.llm = llm
 
 
 @dataclass
@@ -31,11 +18,11 @@ class GeneratorOutput:
         final_description: The final consolidated weather description
     """
 
-    step_1: Optional[str] = None
-    step_2: Optional[str] = None
-    step_3: Optional[str] = None
-    step_4: Optional[str] = None
-    final_description: Optional[str] = None
+    step_1: str | None = None
+    step_2: str | None = None
+    step_3: str | None = None
+    step_4: str | None = None
+    final_description: str | None = None
 
     def is_complete(self) -> bool:
         """
@@ -45,13 +32,8 @@ class GeneratorOutput:
             bool: True if all fields contain content, False otherwise
         """
         return all(
-            [
-                self.step_1 is not None and self.step_1.strip(),
-                self.step_2 is not None and self.step_2.strip(),
-                self.step_3 is not None and self.step_3.strip(),
-                self.step_4 is not None and self.step_4.strip(),
-                self.final_description is not None and self.final_description.strip(),
-            ]
+            getattr(self, field.name) is not None and getattr(self, field.name).strip()
+            for field in fields(self)
         )
 
     def get_missing_fields(self) -> List[str]:
@@ -61,18 +43,11 @@ class GeneratorOutput:
         Returns:
             List[str]: Names of fields that are None or empty
         """
-        missing = []
-        if not self.step_1 or not self.step_1.strip():
-            missing.append("step_1")
-        if not self.step_2 or not self.step_2.strip():
-            missing.append("step_2")
-        if not self.step_3 or not self.step_3.strip():
-            missing.append("step_3")
-        if not self.step_4 or not self.step_4.strip():
-            missing.append("step_4")
-        if not self.final_description or not self.final_description.strip():
-            missing.append("final_description")
-        return missing
+        return [
+            field.name
+            for field in fields(self)
+            if not getattr(self, field.name) or not getattr(self, field.name).strip()
+        ]
 
     def get_step_word_count(self, step_name: str) -> int:
         """
@@ -101,77 +76,91 @@ class GeneratorOutput:
         return len(self.final_description.split())
 
 
-# TODO(high): refactor this to add it to the generator agent class
-def parse_generator_output(output: str) -> GeneratorOutput:
-    """
-    Parse the XML-tagged output from the generator agent into structured data.
+class GeneratorAgent:
+    """GeneratorAgent class for generating weather charts scientific descriptions."""
 
-    Args:
-        output (str): The full output string containing XML tags
+    def __init__(
+        self, llm: BaseLLM, system_prompt: str | None, user_prompt: str
+    ) -> None:
+        """
+        Initialize the GeneratorAgent with a BaseLLM instance.
 
-    Returns:
-        GeneratorOutput: Parsed content with individual step results
+        Args:
+            llm (BaseLLM): An instance of a BaseLLM to handle LLM interactions.
+        """
+        self.llm = llm
+        self.system_prompt = system_prompt
+        self.user_prompt = user_prompt
 
-    Raises:
-        ValueError: If the output string is empty or None
-    """
-    if not output or not output.strip():
-        raise ValueError("Output string is empty or None")
+    def generate(self, image=None) -> str:
+        """
+        Generate a structured weather description using the LLM.
 
-    result = GeneratorOutput()
+        Args:
+            image: Optional image to include in the request (will be converted to base64).
 
-    patterns = {
-        "step_1": r"<step_1>(.*?)</step_1>",
-        "step_2": r"<step_2>(.*?)</step_2>",
-        "step_3": r"<step_3>(.*?)</step_3>",
-        "step_4": r"<step_4>(.*?)</step_4>",
-        "final_description": r"<final_description>(.*?)</final_description>",
-    }
+        Returns:
+            str: The final weather description.
 
-    for field_name, pattern in patterns.items():
+        Raises:
+            ValueError: If the output string is empty or None.
+            RuntimeError: For other run-time errors.
+            Exception: If the LLM response is incomplete or parsing fails.
+        """
         try:
-            match = re.search(pattern, output, re.DOTALL)
-            if match:
-                content = match.group(1).strip()
-                if content:
-                    setattr(result, field_name, content)
+            response = self.llm.generate(
+                user_prompt=self.user_prompt,
+                system_prompt=self.system_prompt,
+                image=image,
+            )
+
+            parsed_output = self.parse_llm_response(response)
+            if not parsed_output.is_complete():
+                raise ValueError(
+                    "Parsed output is incomplete. Missing fields: "
+                    f"{parsed_output.get_missing_fields()}"
+                )
+
+            description = parsed_output.final_description
+
         except Exception as e:
-            print(f"Warning: Failed to parse {field_name}: {e}")
-            continue
+            raise RuntimeError(f"Failed to generate response: {e}") from e
 
-    return result
+        return description  # type: ignore[return-value]
 
+    def parse_llm_response(self, response: str) -> GeneratorOutput:
+        """
+        Parse the XML-tagged response from the generator agent into structured data.
 
-def validate_generator_output(
-    parsed_output: GeneratorOutput, require_all_steps: bool = True
-) -> tuple[bool, List[str]]:
-    """
-    Validate that the parsed output meets expected criteria.
+        Args:
+            response (str): The full llm response string containing XML tags
 
-    Args:
-        parsed_output: The parsed GeneratorOutput object
-        require_all_steps: Whether to require all steps to be present
+        Returns:
+            GeneratorOutput: Parsed content with individual step results
 
-    Returns:
-        tuple[bool, List[str]]: (is_valid, list_of_issues)
-    """
-    issues = []
+        Raises:
+            ValueError: If the response string is empty or None
+            Exception: If parsing fails for any step
+        """
+        if not response or not response.strip():
+            raise ValueError("Response string is empty or None")
 
-    if require_all_steps:
-        missing = parsed_output.get_missing_fields()
-        if missing:
-            issues.append(f"Missing required fields: {', '.join(missing)}")
+        result = GeneratorOutput()
 
-    final_word_count = parsed_output.get_final_description_word_count()
-    if parsed_output.final_description and (
-        final_word_count < 300 or final_word_count > 500
-    ):
-        issues.append(
-            f"Final description word count ({final_word_count}) outside expected range (300-500)"
-        )
+        patterns = {
+            field.name: rf"<{field.name}>(.*?)</{field.name}>"
+            for field in fields(GeneratorOutput)
+        }
 
-    if not parsed_output.final_description:
-        issues.append("Final description is missing or empty")
+        for field_name, pattern in patterns.items():
+            try:
+                match = re.search(pattern, response, re.DOTALL)
+                if match:
+                    content = match.group(1).strip()
+                    if content:
+                        setattr(result, field_name, content)
+            except Exception as e:
+                print(f"Warning: Failed to parse {field_name}: {e}")
+                continue
 
-    is_valid = len(issues) == 0
-    return is_valid, issues
+        return result
