@@ -97,7 +97,6 @@ class BaseLLM:
             raise
         except Exception as e:
             error_msg = f"API call failed: {type(e).__name__}: {e}"
-            print(error_msg)
             raise RuntimeError(error_msg) from e
 
     def __repr__(self) -> str:
@@ -128,7 +127,9 @@ class GroqLLM(BaseLLM):
                 )
 
         super().__init__(
-            model_name=model_name, api_key=api_key, base_url="https://api.groq.com/v1"
+            model_name=model_name,
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
         )
 
 
