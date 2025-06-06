@@ -3,15 +3,26 @@
 CLI entrypoint for generating weather chart descriptions.
 """
 
+import logging
 import os
 import sys
 from pathlib import Path
 
 import fire
+from dotenv import load_dotenv
+from PIL import Image
 
 from earth_reach_agent.core.generator import GeneratorAgent
-from earth_reach_agent.core.llm import BaseLLM, OpenAILLM
+from earth_reach_agent.core.llm import BaseLLM, GroqLLM, OpenAILLM
 from earth_reach_agent.core.prompts import DEFAULT_USER_PROMPT
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 
 def load_prompt_from_file(file_path: str) -> str:
@@ -109,17 +120,35 @@ def validate_image_path(image_path: str) -> Path:
     return path
 
 
-def create_llm() -> BaseLLM:
+def create_llm(provider="groq") -> BaseLLM:
     """
     Create and return LLM instance.
 
     This function can be modified to support different LLM configurations
     or to read from environment variables/config files.
 
+    Args:
+        provider (str): LLM provider name (default: "groq")
+
     Returns:
         BaseLLM: Configured LLM instance
     """
-    return OpenAILLM(model_name="o4-mini-2025-04-16")
+    if provider.lower() == "groq":
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY environment variable is not set.")
+        return GroqLLM(
+            model_name="meta-llama/llama-4-maverick-17b-128e-instruct", api_key=api_key
+        )
+    elif provider.lower() == "openai":
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is not set.")
+        return OpenAILLM(model_name="o4-mini-2025-04-16", api_key=api_key)
+    else:
+        raise ValueError(
+            f"Unsupported LLM provider: {provider}. Supported providers: 'groq', 'openai'."
+        )
 
 
 def main(
@@ -151,11 +180,12 @@ def main(
     """
     try:
         if verbose:
-            print(f"Validating image: {image_path}")
+            logger.info(f"Validating image: {image_path}")
         validated_image_path = validate_image_path(image_path)
+        image = Image.open(validated_image_path)
 
         if verbose:
-            print("Resolving prompts...")
+            logger.info("Resolving prompts...")
         system_prompt_text = resolve_prompt(
             system_prompt,
             system_prompt_file_path,
@@ -171,42 +201,44 @@ def main(
 
         if verbose:
             if system_prompt_text:
-                print(f"System prompt length: {len(system_prompt_text)} characters")
+                logger.info(
+                    f"System prompt length: {len(system_prompt_text)} characters"
+                )
 
             if user_prompt_text:
-                print(f"User prompt length: {len(user_prompt_text)} characters")
+                logger.info(f"User prompt length: {len(user_prompt_text)} characters")
 
         if verbose:
-            print("Initializing LLM...")
+            logger.info("Initializing LLM...")
         llm = create_llm()
 
         if verbose:
-            print("Creating generator agent...")
+            logger.info("Creating generator agent...")
         generator = GeneratorAgent(
             llm=llm, system_prompt=system_prompt_text, user_prompt=user_prompt_text
         )
 
         if verbose:
-            print(f"Generating description for: {validated_image_path.name}")
-        description = generator.generate(image=str(validated_image_path))
+            logger.info(f"Generating description for: {validated_image_path.name}")
+        description = generator.generate(image=image)
 
         if verbose:
-            print("Description generated successfully!")
-            print(f"Description length: {len(description)} characters")
-            print("-" * 50)
+            logger.info("Description generated successfully!")
+            logger.info(f"Description length: {len(description)} characters")
+            logger.info("-" * 50)
 
         print(description)
 
         return None
 
     except (FileNotFoundError, ValueError, IOError) as e:
-        print(f"Error: {e}", file=sys.stderr)
+        logger.error(f"Could not load image file: {e}", exc_info=True)
         sys.exit(1)
     except RuntimeError as e:
-        print(f"Generation failed: {e}", file=sys.stderr)
+        logger.error(f"Generation failed: {e}", exc_info=True)
         sys.exit(1)
     except Exception as e:
-        print(f"Unexpected error: {e}", file=sys.stderr)
+        logger.error(f"Unexpected error: {e}", exc_info=True)
         sys.exit(1)
 
 
