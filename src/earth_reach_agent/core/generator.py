@@ -226,7 +226,7 @@ class GeneratorAgent:
 
         plt_fig = figure.fig
         if plt_fig is None:
-            raise ValueError("Matplotlib figure is None, cannot convert to image.")
+            raise ValueError("Matplotlib figure is None, cannot extract metadata.")
 
         axes = plt_fig.get_axes()
 
