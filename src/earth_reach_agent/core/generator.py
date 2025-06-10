@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from io import BytesIO
 from typing import List
 
@@ -14,11 +14,24 @@ from earth_reach_agent.core.llm import BaseLLM
 class FigureMetadata:
     """Metadata extracted from a figure."""
 
-    title: str | None = None
-    xlabel: str | None = None
-    ylabel: str | None = None
-    domain: str | None = None
-    variables: List[str] | None = None
+    title: str | None = field(
+        default=None, metadata={"description": "Figure title or heading"}
+    )
+    xlabel: str | None = field(
+        default=None,
+        metadata={"description": "X-axis label describing the horizontal dimension"},
+    )
+    ylabel: str | None = field(
+        default=None,
+        metadata={"description": "Y-axis label describing the vertical dimension"},
+    )
+    domain: str | None = field(
+        default=None, metadata={"description": "Geographic domain of the figure"}
+    )
+    variables: List[str] | None = field(
+        default=None,
+        metadata={"description": "Key variables shown in the figure"},
+    )
 
 
 @dataclass
@@ -131,19 +144,11 @@ class GeneratorAgent:
                 "Only one of 'figure' or 'image' can be provided, not both."
             )
         if figure is not None:
-            # TODO(high): implement the following process:
-            # 1. should extract metadata from the figure like (earthkit.plots.Figure):
-            #  - title ✅
-            #  - axes ✅
-            #  - labels✅
-            #  - domain✅
-            #  - variables ❌ (can only come from earthkit.data)
-            #  - distribution values ❌ (can only come from earthkit.data)
-            # 2. should convert the figure to an image file. ✅
-            # 3. should add metadata to the user prompt. 🟨
             metadata = self._get_metadata_from_figure(figure)
+            self.user_prompt = self._update_user_prompt_with_metadata(
+                self.user_prompt, metadata
+            )
             image = self._get_image_from_figure(figure)
-
         elif image is None and figure is None:
             raise ValueError(
                 "Either 'figure' or 'image' must be provided to generate a description."
@@ -215,7 +220,7 @@ class GeneratorAgent:
             figure (ekp.Figure): The figure to extract metadata from.
 
         Returns:
-            A FigureMetadata object containing the extracted metadata.
+            FigureMetadata: An object containing the extracted metadata.
         """
         metadata = FigureMetadata()
 
@@ -230,6 +235,37 @@ class GeneratorAgent:
         metadata.ylabel = axes[0].get_ylabel()
         metadata.domain = figure._domain
         return metadata
+
+    def _update_user_prompt_with_metadata(
+        self, user_prompt: str, metadata: "FigureMetadata"
+    ) -> str:
+        """
+        Update the user prompt with metadata extracted from the figure.
+
+        Args:
+            user_prompt (str): The original user prompt.
+            metadata (FigureMetadata): The metadata to include in the prompt.
+
+        Returns:
+            str: The updated user prompt with metadata included.
+        """
+        metadata_items = []
+        for field_info in fields(metadata):
+            value = getattr(metadata, field_info.name)
+            if value is not None:
+                description = field_info.metadata.get(
+                    "description", "No description available"
+                )
+                metadata_items.append(f"- {field_info.name} ({description}): {value}")
+
+        if not metadata_items:
+            return user_prompt
+
+        metadata_str = "# FIGURE METADATA\n\n"
+        metadata_str += "The following metadata was extracted from the figure:\n\n"
+        metadata_str += "\n".join(metadata_items)
+
+        return f"{user_prompt}\n\n{metadata_str}"
 
     def _get_image_from_figure(self, figure: ekp.Figure) -> ImageFile:
         """
