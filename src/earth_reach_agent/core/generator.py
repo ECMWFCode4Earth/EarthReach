@@ -1,8 +1,24 @@
 import re
 from dataclasses import dataclass, fields
+from io import BytesIO
 from typing import List
 
+import earthkit.plots as ekp
+from PIL import Image
+from PIL.ImageFile import ImageFile
+
 from earth_reach_agent.core.llm import BaseLLM
+
+
+@dataclass
+class FigureMetadata:
+    """Metadata extracted from a figure."""
+
+    title: str | None = None
+    xlabel: str | None = None
+    ylabel: str | None = None
+    domain: str | None = None
+    variables: List[str] | None = None
 
 
 @dataclass
@@ -92,12 +108,15 @@ class GeneratorAgent:
         self.system_prompt = system_prompt
         self.user_prompt = user_prompt
 
-    def generate(self, image=None) -> str:
+    def generate(
+        self, figure: ekp.Figure | None = None, image: ImageFile | None = None
+    ) -> str:
         """
         Generate a structured weather description using the LLM.
 
         Args:
-            image: Optional image to include in the request (will be converted to base64).
+            figure (Figure | None): Optional figure to include in the request. Can't be used with image.
+            image (ImageFile | None): Optional image to include in the request (will be converted to base64). Can't be used with figure.
 
         Returns:
             str: The final weather description.
@@ -107,6 +126,29 @@ class GeneratorAgent:
             RuntimeError: For other run-time errors.
             Exception: If the LLM response is incomplete or parsing fails.
         """
+        if figure is not None and image is not None:
+            raise ValueError(
+                "Only one of 'figure' or 'image' can be provided, not both."
+            )
+        if figure is not None:
+            # TODO(high): implement the following process:
+            # 1. should extract metadata from the figure like (earthkit.plots.Figure):
+            #  - title ✅
+            #  - axes ✅
+            #  - labels✅
+            #  - domain✅
+            #  - variables ❌ (can only come from earthkit.data)
+            #  - distribution values ❌ (can only come from earthkit.data)
+            # 2. should convert the figure to an image file. ✅
+            # 3. should add metadata to the user prompt. 🟨
+            metadata = self._get_metadata_from_figure(figure)
+            image = self._get_image_from_figure(figure)
+
+        elif image is None and figure is None:
+            raise ValueError(
+                "Either 'figure' or 'image' must be provided to generate a description."
+            )
+
         try:
             response = self.llm.generate(
                 user_prompt=self.user_prompt,
@@ -164,3 +206,42 @@ class GeneratorAgent:
                 continue
 
         return result
+
+    def _get_metadata_from_figure(self, figure: ekp.Figure) -> FigureMetadata:
+        """
+        Extract metadata from the given figure.
+
+        Args:
+            figure (ekp.Figure): The figure to extract metadata from.
+
+        Returns:
+            A FigureMetadata object containing the extracted metadata.
+        """
+        metadata = FigureMetadata()
+
+        plt_fig = figure.fig
+        if plt_fig is None:
+            raise ValueError("Matplotlib figure is None, cannot convert to image.")
+
+        axes = plt_fig.get_axes()
+
+        metadata.title = axes[0].get_title()
+        metadata.xlabel = axes[0].get_xlabel()
+        metadata.ylabel = axes[0].get_ylabel()
+        metadata.domain = figure._domain
+        return metadata
+
+    def _get_image_from_figure(self, figure: ekp.Figure) -> ImageFile:
+        """
+        Convert the given figure to an image file.
+
+        Args:
+            figure (ekp.Figure): The figure to convert.
+
+        Returns:
+            ImageFile: The converted image file.
+        """
+        buffer = BytesIO()
+        figure.save(buffer, format="png")
+        buffer.seek(0)
+        return Image.open(buffer)
