@@ -13,8 +13,8 @@ from dotenv import load_dotenv
 from PIL import Image
 
 from earth_reach_agent.core.generator import GeneratorAgent
-from earth_reach_agent.core.llm import BaseLLM, GroqLLM, OpenAILLM
-from earth_reach_agent.core.prompts import DEFAULT_USER_PROMPT
+from earth_reach_agent.core.llm import create_llm
+from earth_reach_agent.core.prompts import DEFAULT_GENERATOR_USER_PROMPT
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,7 +56,7 @@ def load_prompt_from_file(file_path: str) -> str:
 def resolve_prompt(
     direct_prompt: str | None,
     file_path: str | None,
-    default_prompt: str | None,
+    DEFAULT_USER_PROMPT: str | None,
 ) -> str | None:
     """
     Resolve final prompt from direct string, file path, or default.
@@ -64,7 +64,7 @@ def resolve_prompt(
     Args:
         direct_prompt (str | None): Direct prompt text
         file_path (str | None): Path to prompt file
-        default_prompt (str | None): Default prompt to use if neither is provided
+        DEFAULT_USER_PROMPT (str | None): Default prompt to use if neither is provided
 
     Returns:
         str | None: The resolved prompt text
@@ -85,7 +85,7 @@ def resolve_prompt(
     if file_path is not None:
         return load_prompt_from_file(file_path)
 
-    return default_prompt
+    return DEFAULT_USER_PROMPT
 
 
 def validate_image_path(image_path: str) -> Path:
@@ -118,37 +118,6 @@ def validate_image_path(image_path: str) -> Path:
         )
 
     return path
-
-
-def create_llm(provider="groq") -> BaseLLM:
-    """
-    Create and return LLM instance.
-
-    This function can be modified to support different LLM configurations
-    or to read from environment variables/config files.
-
-    Args:
-        provider (str): LLM provider name (default: "groq")
-
-    Returns:
-        BaseLLM: Configured LLM instance
-    """
-    if provider.lower() == "groq":
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY environment variable is not set.")
-        return GroqLLM(
-            model_name="meta-llama/llama-4-maverick-17b-128e-instruct", api_key=api_key
-        )
-    elif provider.lower() == "openai":
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is not set.")
-        return OpenAILLM(model_name="o4-mini-2025-04-16", api_key=api_key)
-    else:
-        raise ValueError(
-            f"Unsupported LLM provider: {provider}. Supported providers: 'groq', 'openai'."
-        )
 
 
 def main(
@@ -192,7 +161,7 @@ def main(
             None,
         )
         user_prompt_text = resolve_prompt(
-            user_prompt, user_prompt_file_path, DEFAULT_USER_PROMPT
+            user_prompt, user_prompt_file_path, DEFAULT_GENERATOR_USER_PROMPT
         )
         if not user_prompt_text:
             raise ValueError(
