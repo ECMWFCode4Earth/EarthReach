@@ -1,3 +1,5 @@
+import os
+
 import openai
 
 from earth_reach_agent.core.utils import img_to_base64
@@ -158,4 +160,35 @@ class OpenAILLM(BaseLLM):
 
         super().__init__(
             model_name=model_name, api_key=api_key, base_url="https://api.openai.com/v1"
+        )
+
+
+def create_llm(provider="groq") -> BaseLLM:
+    """
+    Create and return LLM instance.
+
+    This function can be modified to support different LLM configurations
+    or to read from environment variables/config files.
+
+    Args:
+        provider (str): LLM provider name (default: "groq")
+
+    Returns:
+        BaseLLM: Configured LLM instance
+    """
+    if provider.lower() == "groq":
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY environment variable is not set.")
+        return GroqLLM(
+            model_name="meta-llama/llama-4-maverick-17b-128e-instruct", api_key=api_key
+        )
+    elif provider.lower() == "openai":
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is not set.")
+        return OpenAILLM(model_name="o4-mini-2025-04-16", api_key=api_key)
+    else:
+        raise ValueError(
+            f"Unsupported LLM provider: {provider}. Supported providers: 'groq', 'openai'."
         )
