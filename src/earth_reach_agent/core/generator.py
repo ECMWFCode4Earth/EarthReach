@@ -112,10 +112,12 @@ class GeneratorAgent:
         self, llm: BaseLLM, system_prompt: str | None, user_prompt: str
     ) -> None:
         """
-        Initialize the GeneratorAgent with a BaseLLM instance.
+        Initialize the GeneratorAgent with a BaseLLM instance and prompts.
 
         Args:
             llm (BaseLLM): An instance of a BaseLLM to handle LLM interactions.
+            system_prompt (str | None): Optional system prompt to guide the style of the LLM.
+            user_prompt (str): The user prompt containing the instructions for description generation.
         """
         self.llm = llm
         self.system_prompt = system_prompt
@@ -238,7 +240,7 @@ class GeneratorAgent:
         return metadata
 
     def _update_user_prompt_with_metadata(
-        self, user_prompt: str, metadata: "FigureMetadata"
+        self, user_prompt: str, metadata: FigureMetadata
     ) -> str:
         """
         Update the user prompt with metadata extracted from the figure.
