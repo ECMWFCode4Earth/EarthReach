@@ -9,12 +9,20 @@ from PIL.ImageFile import ImageFile
 
 from earth_reach_agent.core.generator import FigureMetadata
 from earth_reach_agent.core.llm import BaseLLM, create_llm
-from earth_reach_agent.core.prompts import get_default_criteria_evaluator_user_prompt
+from earth_reach_agent.core.prompts import get_default_criterion_evaluator_user_prompt
 
 
 @dataclass
-class CriteriaEvaluatorOutput:
-    criteria: str
+class CriterionEvaluatorOutput:
+    """Structured representation of the criterion evaluator's output.
+
+    Attributes:
+        criterion: The criterion against which the text was evaluated.
+        score: The score assigned to the text based on the criterion (0 to 5).
+        reasoning: Optional reasoning for the score, if provided by the LLM.
+    """
+
+    criterion: str
     score: int
     reasoning: str | None = None
 
@@ -32,12 +40,16 @@ class CriteriaEvaluatorOutput:
             raise ValueError("Score must be between 0 and 5.")
 
 
-class CriteriaEvaluator:
-    """Evaluator class for evaluating the quality of text based on a specified criteria."""
+class CriterionEvaluator:
+    """Evaluator class for evaluating the quality of text based on a specified criterion."""
 
     def __init__(
-        self, llm: BaseLLM, system_prompt: str | None, user_prompt: str
+        self, criterion: str, llm: BaseLLM, system_prompt: str | None, user_prompt: str
     ) -> None:
+        if criterion not in ["coherence", "fluency", "consistency", "relevance"]:
+            raise ValueError(f"Unsupported criterion: {criterion}")
+
+        self.criterion = criterion
         self.llm = llm
         self.system_prompt = system_prompt
         self.user_prompt = user_prompt
@@ -47,7 +59,7 @@ class CriteriaEvaluator:
         description: str,
         figure: ekp.Figure | None = None,
         image: ImageFile | None = None,
-    ) -> CriteriaEvaluatorOutput:
+    ) -> CriterionEvaluatorOutput:
         if figure is not None and image is not None:
             raise ValueError(
                 "Only one of 'figure' or 'image' can be provided, not both."
@@ -77,15 +89,15 @@ class CriteriaEvaluator:
         except Exception as e:
             raise RuntimeError(f"Failed to generate response: {e}") from e
 
-    def parse_llm_response(self, response: str) -> CriteriaEvaluatorOutput:
+    def parse_llm_response(self, response: str) -> CriterionEvaluatorOutput:
         """
-        Parse the XML-tagged response from the CriteriaEvaluator Agent into structured data.
+        Parse the XML-tagged response from the CriterionEvaluator Agent into structured data.
 
         Args:
             response (str): The full llm response string containing XML tags
 
         Returns:
-            CriteriaEvaluatorOutput: Parsed evaluation content
+            CriterionEvaluatorOutput: Parsed evaluation content
 
         Raises:
             ValueError: If the response string is empty or None, or if required fields are missing
@@ -94,7 +106,7 @@ class CriteriaEvaluator:
         if not response or not response.strip():
             raise ValueError("Response string is empty or None")
 
-        dataclass_fields = fields(CriteriaEvaluatorOutput)
+        dataclass_fields = fields(CriterionEvaluatorOutput)
 
         extracted_values = {}
         parsing_errors = []
@@ -133,10 +145,12 @@ class CriteriaEvaluator:
             raise Exception(f"Parsing errors occurred: {'; '.join(parsing_errors)}")
 
         try:
-            return CriteriaEvaluatorOutput(**extracted_values)
+            return CriterionEvaluatorOutput(
+                criterion=self.criterion, **extracted_values
+            )
         except Exception as e:
             raise Exception(
-                f"Failed to create CriteriaEvaluatorOutput instance: {str(e)}"
+                f"Failed to create CriterionEvaluatorOutput instance: {str(e)}"
             )
 
     def convert_to_field_type(
@@ -277,30 +291,32 @@ class CriteriaEvaluator:
         return Image.open(buffer)
 
 
-class EvaluatorCriteriaFactory:
-    """Factory class for creating single criteria evaluator agents."""
+class CriterionEvaluatorFactory:
+    """Factory class for creating single criterion evaluator agents."""
 
     @staticmethod
-    def create(criterion: str, llm: BaseLLM | None = None) -> CriteriaEvaluator:
+    def create(criterion: str, llm: BaseLLM | None = None) -> CriterionEvaluator:
         """
-        Create a CriteriaEvaluator instance based on the provided criteria.
+        Create a CriterionEvaluator instance based on the provided criterion.
 
         Args:
-            criteria (str): Criteria name to create evaluators for.
+            criterion (str): Criterion name to create evaluators for.
             llm (BaseLLM | None): Optional LLM instance to use for evaluation.
 
         Returns:
-            CriteriaEvaluator: CriteriaEvaluator instance.
+            CriterionEvaluator: CriterionEvaluator instance.
         """
         if criterion not in ["coherence", "fluency", "consistency", "relevance"]:
-            raise ValueError(f"Unsupported criteria: {criterion}")
+            raise ValueError(f"Unsupported criterion: {criterion}")
 
         if not llm:
             llm = create_llm()
 
-        user_prompt = get_default_criteria_evaluator_user_prompt(criterion)
+        user_prompt = get_default_criterion_evaluator_user_prompt(criterion)
 
-        return CriteriaEvaluator(llm=llm, system_prompt=None, user_prompt=user_prompt)
+        return CriterionEvaluator(
+            criterion=criterion, llm=llm, system_prompt=None, user_prompt=user_prompt
+        )
 
 
 class EvaluatorAgent:
@@ -311,12 +327,59 @@ class EvaluatorAgent:
         Initialize the EvaluatorAgent.
 
         Args:
-            parameters, quality criteria, etc..
-        """
-        pass
+            criteria (List[str]): List of criteria to evaluate against.
+                Supported criteria: "coherence", "fluency", "consistency", "relevance".
 
-    def evaluate(self, text: str, criteria: dict):
-        pass
+        Raises:
+            ValueError: If an unsupported criterion is provided.
+            RuntimeError: If the evaluator creation fails.
+        """
+        for criterion in criteria:
+            if criterion not in ["coherence", "fluency", "consistency", "relevance"]:
+                raise ValueError(f"Unsupported criterion: {criterion}")
+
+        self.criteria = criteria
+
+        try:
+            self.evaluators = [
+                CriterionEvaluatorFactory.create(criterion) for criterion in criteria
+            ]
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to create evaluators for criteria {criteria}: {e}"
+            ) from e
+
+    def evaluate(
+        self,
+        description: str,
+        figure: ekp.Figure | None = None,
+        image: ImageFile | None = None,
+    ) -> List[CriterionEvaluatorOutput]:
+        """
+        Evaluate the given text against the specified criteria.
+
+        Args:
+            text (str): The text to evaluate.
+
+        Returns:
+            List[CriterionEvaluatorOutput]: A list of evaluation results for each criterion.
+        """
+        if figure is not None and image is not None:
+            raise ValueError(
+                "Only one of 'figure' or 'image' can be provided, not both."
+            )
+
+        try:
+            evaluations = []
+            for evaluator in self.evaluators:
+                result = evaluator.evaluate(
+                    description=description, figure=figure, image=image
+                )
+                evaluations.append(result)
+
+            return evaluations
+        except Exception as e:
+            raise RuntimeError(f"Failed to evaluate description: {e}") from e
 
     def is_text_length_lesser_than_max(self, text: str, max_length: int = 1000) -> bool:
         """
