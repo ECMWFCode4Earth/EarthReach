@@ -276,13 +276,11 @@ You are a scientific communication specialist evaluating weather chart descripti
 Provide your evaluation in the following XML format:
 
 ```xml
-<criteria>Coherence</criteria>
 <reasoning>[Your detailed analysis explaining the score, referencing specific aspects of information flow, structural organization, and accessibility-adapted coherence. Include concrete examples from the description to support your assessment.]</reasoning>
 <score>[0-5]</score>
 ```
 
 **Critical Requirements**:
-- Use exactly `<criteria>Coherence</criteria>`
 - Score must be an integer from 0 to 5
 - Reasoning should reference specific textual evidence
 - All XML tags must be properly closed
@@ -418,13 +416,11 @@ You are a scientific communication expert specializing in technical writing asse
 Provide your evaluation in the following XML format:
 
 ```xml
-<criteria>Fluency</criteria>
 <reasoning>[Your detailed analysis explaining the score, referencing specific examples of grammatical correctness, terminology usage, readability, and scientific voice. Include concrete textual evidence to support your assessment.]</reasoning>
 <score>[0-5]</score>
 ```
 
 **Critical Requirements**:
-- Use exactly `<criteria>Fluency</criteria>`
 - Score must be an integer from 0 to 5
 - Reasoning should reference specific linguistic evidence from the description
 - All XML tags must be properly closed
@@ -559,13 +555,11 @@ You are a meteorological data validation specialist evaluating weather chart des
 Provide your evaluation in the following XML format:
 
 ```xml
-<criteria>Consistency</criteria>
 <reasoning>[Your detailed analysis explaining the score, referencing specific examples of source-description alignment, internal consistency, meteorological plausibility, and quantitative accuracy. Include concrete evidence from both the chart and description to support your assessment.]</reasoning>
 <score>[0-5]</score>
 ```
 
 **Critical Requirements**:
-- Use exactly `<criteria>Consistency</criteria>`
 - Score must be an integer from 0 to 5
 - Reasoning should reference specific examples comparing chart features to description elements
 - All XML tags must be properly closed
@@ -701,13 +695,11 @@ You are a meteorological analysis expert evaluating weather chart descriptions f
 Provide your evaluation in the following XML format:
 
 ```xml
-<criteria>Relevance</criteria>
 <reasoning>[Your detailed analysis explaining the score, referencing specific examples of meteorological significance prioritization, information density optimization, analytical enablement, and contextual appropriateness. Include concrete evidence of what important information is emphasized or missed.]</reasoning>
 <score>[0-5]</score>
 ```
 
 **Critical Requirements**:
-- Use exactly `<criteria>Relevance</criteria>`
 - Score must be an integer from 0 to 5
 - Reasoning should reference specific examples of information prioritization and meteorological significance
 - All XML tags must be properly closed
@@ -717,7 +709,7 @@ Provide your evaluation in the following XML format:
 """
 
 
-def get_default_criteria_evaluator_user_prompt(criteria: str) -> str:
+def get_default_criterion_evaluator_user_prompt(criteria: str) -> str:
     """
     Get the default user prompt for the specified CriteriaEvaluatorAgent.
 
