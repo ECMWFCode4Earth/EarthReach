@@ -14,7 +14,7 @@ from PIL import Image
 
 from earth_reach_agent.core.generator import GeneratorAgent
 from earth_reach_agent.core.llm import create_llm
-from earth_reach_agent.core.prompts import DEFAULT_GENERATOR_USER_PROMPT
+from earth_reach_agent.core.prompts.generator import get_default_generator_user_prompt
 
 logging.basicConfig(
     level=logging.INFO,
@@ -161,7 +161,7 @@ def main(
             None,
         )
         user_prompt_text = resolve_prompt(
-            user_prompt, user_prompt_file_path, DEFAULT_GENERATOR_USER_PROMPT
+            user_prompt, user_prompt_file_path, get_default_generator_user_prompt()
         )
         if not user_prompt_text:
             raise ValueError(

@@ -9,7 +9,9 @@ from PIL.ImageFile import ImageFile
 
 from earth_reach_agent.core.generator import FigureMetadata
 from earth_reach_agent.core.llm import BaseLLM, create_llm
-from earth_reach_agent.core.prompts import get_default_criterion_evaluator_user_prompt
+from earth_reach_agent.core.prompts.criteria import (
+    get_default_criterion_evaluator_user_prompt,
+)
 
 
 @dataclass
