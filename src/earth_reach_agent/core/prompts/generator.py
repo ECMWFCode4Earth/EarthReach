@@ -165,5 +165,9 @@ This weather chart visualization shows 2-meter temperature and mean sea level pr
 
 
 def get_default_generator_user_prompt() -> str:
-    """Get the default user prompt for the weather chart description generator."""
+    """Get the default user prompt for the weather chart description generator.
+
+    Returns:
+         str: The default user prompt for the generator agent.
+    """
     return DEFAULT_GENERATOR_USER_PROMPT
