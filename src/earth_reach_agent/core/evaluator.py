@@ -9,7 +9,7 @@ from PIL.ImageFile import ImageFile
 
 from earth_reach_agent.core.generator import FigureMetadata
 from earth_reach_agent.core.llm import BaseLLM, create_llm
-from earth_reach_agent.core.prompts.criteria import (
+from earth_reach_agent.core.prompts.evaluator import (
     get_default_criterion_evaluator_user_prompt,
 )
 
@@ -24,7 +24,7 @@ class CriterionEvaluatorOutput:
         reasoning: Optional reasoning for the score, if provided by the LLM.
     """
 
-    criterion: str
+    name: str
     score: int
     reasoning: str | None = None
 
@@ -147,9 +147,7 @@ class CriterionEvaluator:
             raise Exception(f"Parsing errors occurred: {'; '.join(parsing_errors)}")
 
         try:
-            return CriterionEvaluatorOutput(
-                criterion=self.criterion, **extracted_values
-            )
+            return CriterionEvaluatorOutput(name=self.criterion, **extracted_values)
         except Exception as e:
             raise Exception(
                 f"Failed to create CriterionEvaluatorOutput instance: {str(e)}"
