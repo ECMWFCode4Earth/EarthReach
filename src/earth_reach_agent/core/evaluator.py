@@ -67,7 +67,7 @@ class CriterionEvaluator:
                 "Only one of 'figure' or 'image' can be provided, not both."
             )
         if figure is not None:
-            # TODO(medium): If metadata extraction failes, continue without it
+            # TODO(medium): If metadata extraction fails, continue without it
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
                 self.user_prompt, metadata
