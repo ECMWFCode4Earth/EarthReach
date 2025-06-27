@@ -284,3 +284,7 @@ class GeneratorAgent:
         figure.save(buffer, format="png")
         buffer.seek(0)
         return Image.open(buffer)
+
+    def append_user_prompt(self, text: str) -> None:
+        """Append additional text to the user prompt."""
+        self.user_prompt += f"\n\n{text.strip()}"
