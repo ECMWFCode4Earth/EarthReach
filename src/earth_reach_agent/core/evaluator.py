@@ -322,7 +322,7 @@ class CriterionEvaluatorFactory:
 class EvaluatorAgent:
     """Agent class for evaluating the quality of weather chart descriptions."""
 
-    def __init__(self, criteria: List[str]) -> None:
+    def __init__(self, criteria: List[str], llm: BaseLLM | None = None) -> None:
         """
         Initialize the EvaluatorAgent.
 
@@ -342,7 +342,8 @@ class EvaluatorAgent:
 
         try:
             self.evaluators = [
-                CriterionEvaluatorFactory.create(criterion) for criterion in criteria
+                CriterionEvaluatorFactory.create(criterion, llm=llm)
+                for criterion in criteria
             ]
         except Exception as e:
             raise RuntimeError(
