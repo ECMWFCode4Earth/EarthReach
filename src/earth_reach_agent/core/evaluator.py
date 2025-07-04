@@ -1,3 +1,4 @@
+import logging
 import re
 from dataclasses import MISSING, dataclass, fields
 from io import BytesIO
@@ -12,6 +13,8 @@ from earth_reach_agent.core.llm import BaseLLM, create_llm
 from earth_reach_agent.core.prompts.evaluator import (
     get_default_criterion_evaluator_user_prompt,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -131,10 +134,17 @@ class CriterionEvaluator:
             except Exception as e:
                 parsing_errors.append(f"Failed to parse field '{field_name}': {str(e)}")
 
+        logger.warning(
+            f"Parsing errors encountered: {parsing_errors}"
+        ) if parsing_errors else None
+
         required_fields = [
             f.name
             for f in dataclass_fields
-            if f.default == MISSING and f.default_factory == MISSING
+            if f.default == MISSING
+            and f.default_factory == MISSING
+            and f.name
+            != "name"  # 'name' not required since it's set by object attribute
         ]
 
         missing_required = [f for f in required_fields if f not in extracted_values]
@@ -142,9 +152,6 @@ class CriterionEvaluator:
             raise ValueError(
                 f"Missing required fields in XML response: {missing_required}"
             )
-
-        if parsing_errors:
-            raise Exception(f"Parsing errors occurred: {'; '.join(parsing_errors)}")
 
         try:
             return CriterionEvaluatorOutput(name=self.criterion, **extracted_values)
