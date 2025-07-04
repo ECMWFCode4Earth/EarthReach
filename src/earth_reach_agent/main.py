@@ -13,6 +13,7 @@ import fire
 from dotenv import load_dotenv
 from PIL import Image
 
+from earth_reach_agent.config.criteria import QualityCriteria
 from earth_reach_agent.core.evaluator import EvaluatorAgent
 from earth_reach_agent.core.generator import GeneratorAgent
 from earth_reach_agent.core.llm import create_llm
@@ -139,7 +140,7 @@ def get_valid_criteria() -> List[str]:
     Returns:
         List[str]: List of valid criteria names
     """
-    return ["coherence", "fluency", "consistency", "relevance"]
+    return QualityCriteria.list()
 
 
 def validate_image_path(image_path: str) -> Path:
