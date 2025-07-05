@@ -25,8 +25,8 @@ dev = [
 ]
 
 [project.scripts]
-earth-reach-agent = "earth_reach_agent.main:cli"
-era = "earth_reach_agent.main:cli"
+earth-reach-agent = "earth_reach_agent.cli:cli"
+era = "earth_reach_agent.cli:cli"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/earth_reach_agent"]
