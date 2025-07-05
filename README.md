@@ -18,12 +18,64 @@ EarthReach is a challenge from the 2025 edition dedicated to enhancing the acces
 
 ## Installation
 
-### VLLM Inference Server
+### Prerequisites
+
+- Python 3.12 or higher
+- [uv](https://docs.astral.sh/uv/) - Python package and project manager
+
+### Setup
+
+1. **Clone the repository**
+  ```sh
+   git clone https://github.com/ECMWFCode4Earth/EarthReach.git
+   cd EarthReach
+  ```
+2. **Create a virtual environment and install dependencies**
+  ```sh
+  uv sync
+  ```
+This command will automatically:
+- Create a .venv virtual environment
+- Install all project dependencies from pyproject.toml
+
+3. **Activate the virtual environment**
+  ```sh
+  source .venv/bin/activate  # On Windows, use: .venv\Scripts\activate
+  ```
+
+You're now ready to use the project.
+
+## VLLM Inference Server
 
 To run this project, you will need to have an openAI-compatible LLM inference server. 
 
-We provide instructions on how to set your own secured inference server using [VLLM](./vllm/setup.md).
+We provide instructions on how to setup your own secured inference server using [VLLM](./vllm/setup.md).
 
+## Usage
+
+The project provides a command-line interface (CLI) accessible through `earth-reach-agent` or its shorter alias `era`.
+
+### Available Commands
+
+View all commands and options:
+```sh
+uv run era --help
+```
+
+### Generate weather chart descriptions
+
+Generate a natural language description from a weather chart image:
+```sh
+uv run era generate --image-path <path_to_image>
+```
+
+### Evaluate descriptions
+
+Evaluate the accuracy of a description against a weather chart:
+
+```sh
+uv run era evaluate --image-path <path_to_image> --description "<description_string>"
+```
 ## License
 
 See [LICENSE](LICENSE)
