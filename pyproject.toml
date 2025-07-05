@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "earth-reach-agent"
+version = "0.1.0"
+description = "EarthReach Agent: Dual-LLM Framework for Validated Meteorological Chart Descriptions"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "earthkit>=0.10.3",
+    "earthkit-data>=0.13.8",
+    "earthkit-plots>=0.3.1",
+    "openai>=1.77.0",
+    "python-dotenv>=1.1.0",
+    "hatchling>=1.27.0",
+    "fire @ git+https://github.com/google/python-fire.git@2025-03-23-ipython", # Fixes IPython v9.0 compatibility issue 
+]
+
+[dependency-groups]
+dev = [
+    "jupytext>=1.17.1",
+    "ipykernel>=6.29.5",
+]
+
+[project.scripts]
+earth-reach-agent = "earth_reach_agent.cli:cli"
+era = "earth_reach_agent.cli:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/earth_reach_agent"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
