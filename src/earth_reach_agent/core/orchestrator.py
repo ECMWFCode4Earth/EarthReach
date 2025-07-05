@@ -29,6 +29,8 @@ class Orchestrator:
             generator_agent: Instance of GeneratorAgent for generating descriptions
             evaluator_agent: Instance of EvaluatorAgent for evaluating descriptions
             max_iterations: Maximum number of iterations for generating descriptions
+            criteria_threshold: Minimum score for evaluation criteria to pass
+            feedback_template: Template for feedback to the generator agent (optional)
         """
         self.generator_agent = generator_agent
         self.evaluator_agent = evaluator_agent
@@ -44,7 +46,7 @@ class Orchestrator:
 
     def run(
         self, figure: ekp.Figure | None = None, image: ImageFile | None = None
-    ) -> str | None:
+    ) -> str:
         """Run the iterative process of generating and evaluating a weather chart description
         until quality criteria are met.
 
@@ -53,7 +55,7 @@ class Orchestrator:
             image (ImageFile | None): Optional image to include in the request (will be converted to base64). Can't be used with figure.
 
         Returns:
-            str | None: The final weather description if successful, None if max iterations reached without success
+            str: The final weather description.
         """
         if figure is not None and image is not None:
             raise ValueError(

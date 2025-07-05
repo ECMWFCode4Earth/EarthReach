@@ -17,6 +17,7 @@ from earth_reach_agent.config.criteria import QualityCriteria
 from earth_reach_agent.core.evaluator import EvaluatorAgent
 from earth_reach_agent.core.generator import GeneratorAgent
 from earth_reach_agent.core.llm import create_llm
+from earth_reach_agent.core.orchestrator import Orchestrator
 from earth_reach_agent.core.prompts.generator import get_default_generator_user_prompt
 
 logging.basicConfig(
@@ -188,6 +189,9 @@ class CLI:
         system_prompt_file_path: str | None = None,
         user_prompt: str | None = None,
         user_prompt_file_path: str | None = None,
+        simple: bool = False,
+        max_iterations: int = 3,
+        criteria_threshold: int = 4,
         verbose: bool = False,
     ) -> None:
         """
@@ -199,6 +203,9 @@ class CLI:
             system_prompt_file_path (str | None): Path to system prompt file (optional)
             user_prompt (str | None): User prompt text (optional)
             user_prompt_file_path (str | None): Path to user prompt file (optional)
+            simple (bool): Skip orchestrator to only use generator (optional)
+            max_iterations (int): Orchestrator maximum iterations for description generation (default: 3)
+            criteria_threshold (int): Minimum score for evaluation criteria to pass (default: 4
             verbose (bool): Enable verbose output (optional)
 
         Returns:
@@ -217,6 +224,7 @@ class CLI:
 
             if verbose:
                 logger.info("Resolving prompts...")
+
             system_prompt_text = resolve_prompt(
                 system_prompt,
                 system_prompt_file_path,
@@ -247,13 +255,37 @@ class CLI:
 
             if verbose:
                 logger.info("Creating generator agent...")
+
             generator = GeneratorAgent(
                 llm=llm, system_prompt=system_prompt_text, user_prompt=user_prompt_text
             )
 
+            if not simple:
+                if verbose:
+                    logger.info("Creating evaluator agent...")
+
+                evaluator = EvaluatorAgent(
+                    criteria=QualityCriteria.list(),
+                    llm=llm,
+                )
+
+                if verbose:
+                    logger.info("Creating orchestrator...")
+
+                orchestrator = Orchestrator(
+                    generator_agent=generator,
+                    evaluator_agent=evaluator,
+                    max_iterations=max_iterations,
+                    criteria_threshold=criteria_threshold,
+                )
+
             if verbose:
                 logger.info(f"Generating description for: {validated_image_path.name}")
-            description = generator.generate(image=image)
+
+            if simple:
+                description = generator.generate(image=image)
+            else:
+                description = orchestrator.run(image=image)
 
             if verbose:
                 logger.info("Description generated successfully!")
@@ -303,11 +335,13 @@ class CLI:
         try:
             if verbose:
                 logger.info(f"Validating image: {image_path}")
+
             validated_image_path = validate_image_path(image_path)
             image = Image.open(validated_image_path)
 
             if verbose:
                 logger.info("Resolving description...")
+
             description_text = resolve_description(
                 description,
                 description_file_path,
@@ -366,11 +400,14 @@ class CLI:
             return None
 
         except FileNotFoundError as e:
-            raise FileNotFoundError(f"File not found: {e}")
+            logger.error(f"File not found: {e}", exc_info=True)
+            sys.exit(1)
         except ValueError as e:
-            raise ValueError(f"Invalid input: {e}")
+            logger.error(f"Invalid input: {e}", exc_info=True)
+            sys.exit(1)
         except Exception as e:
-            raise RuntimeError(f"Evaluation failed: {e}")
+            logger.error(f"Evaluation failed: {e}", exc_info=True)
+            sys.exit(1)
 
 
 def cli():
