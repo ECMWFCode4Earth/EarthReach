@@ -45,6 +45,20 @@ This command will automatically:
 
 You're now ready to use the project.
 
+## Project Structure
+
+```sh
+. 
+├── docs/                     # Project documentation
+├── notebooks/                # Tutorials & experiments
+├── src/
+│   ├── earth_reach_agent/    # Main package
+│   └── tests/                # Unit and integration tests (to come)
+├── vllm/                     # VLLM inference server setup
+├── pyproject.toml            # Project dependencies and metadata
+└── uv.lock                   # Locked dependency versions
+```
+
 ## VLLM Inference Server
 
 To run this project, you will need to have an openAI-compatible LLM inference server. 
