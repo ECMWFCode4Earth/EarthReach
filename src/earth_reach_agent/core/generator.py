@@ -51,6 +51,8 @@ class GeneratorOutput:
     step_2: str | None = None
     step_3: str | None = None
     step_4: str | None = None
+    step_5: str | None = None
+    step_6: str | None = None
     final_description: str | None = None
 
     def is_complete(self) -> bool:
