@@ -301,7 +301,6 @@ Keep regional temps specific, pressure values exact.
 </step_5>
 
 ### Step 6: Final Scientific Description
-<step_6>
 <final_description>
 This global weather chart displays 2-meter temperature and mean sea level pressure for March 12, 2011, at 12:00 UTC, representing late boreal winter conditions. The domain spans 90°S to 90°N and 180°W to 180°E. Temperature ranges from -40°C (deep blue) to +40°C (deep red) with 2°C color increments. Pressure contours extend from 970 to 1028 hPa at 4 hPa intervals.
 
@@ -321,7 +320,6 @@ Australia displays typical autumn transition patterns with a low-pressure system
 
 This chart captures the global atmosphere during seasonal transition, with each hemisphere displaying characteristic late-season patterns modified by regional geography and ocean-continent thermal contrasts.
 </final_description>
-</step_6>
 
 ## CRITICAL CONSTRAINTS AND SPECIFICATIONS
 
@@ -367,7 +365,6 @@ Your analysis succeeds when a blind meteorologist can:
 - `<step_3>...</step_3>` - Pattern recognition notes
 - `<step_4>...</step_4>` - Validation notes
 - `<step_5>...</step_5>` - Planning notes
-- `<step_6>...</step_6>` - Contains the final description writing process
 - `<final_description>...</final_description>` - ONLY the final 450-500 word description
 
 Remember: You are creating a complete analytical instrument that preserves the full scientific power of visual weather analysis for blind scientists. Precision and systematic methodology are essential for research quality and operational safety.

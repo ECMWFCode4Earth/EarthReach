@@ -52,7 +52,6 @@ class GeneratorOutput:
     step_3: str | None = None
     step_4: str | None = None
     step_5: str | None = None
-    step_6: str | None = None
     final_description: str | None = None
 
     def is_complete(self) -> bool:
@@ -126,14 +125,18 @@ class GeneratorAgent:
         self.user_prompt = user_prompt
 
     def generate(
-        self, figure: ekp.Figure | None = None, image: ImageFile | None = None
-    ) -> str:
+        self,
+        figure: ekp.Figure | None = None,
+        image: ImageFile | None = None,
+        return_intermediate_steps: bool = False,
+    ) -> str | GeneratorOutput:
         """
         Generate a structured weather description using the LLM.
 
         Args:
             figure (Figure | None): Optional figure to include in the request. Can't be used with image.
             image (ImageFile | None): Optional image to include in the request (will be converted to base64). Can't be used with figure.
+            return_intermediate_steps (bool): If True, return intermediate steps in the response.
 
         Returns:
             str: The final weather description.
@@ -172,6 +175,9 @@ class GeneratorAgent:
                     "Parsed output is incomplete. Missing fields: "
                     f"{parsed_output.get_missing_fields()}"
                 )
+
+            if return_intermediate_steps:
+                return parsed_output
 
             description = parsed_output.final_description
 
