@@ -23,3 +23,21 @@ def img_to_base64(image_path: str | None = None, img=None) -> str:
 
     with open(image_path, "rb") as img_file:  # type: ignore
         return base64.b64encode(img_file.read()).decode("utf-8")
+
+
+def img_to_bytes(img) -> bytes:
+    """
+    Convert a PIL Image to bytes for Gemini API.
+
+    Args:
+        img: PIL Image object
+
+    Returns:
+        bytes: Image as bytes
+    """
+    if img is None:
+        raise ValueError("Image cannot be None")
+
+    bytes_io = BytesIO()
+    img.save(bytes_io, format="PNG")
+    return bytes_io.getvalue()

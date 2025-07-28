@@ -7,7 +7,7 @@ import earthkit.plots as ekp
 from PIL import Image
 from PIL.ImageFile import ImageFile
 
-from earth_reach_agent.core.llm import BaseLLM
+from earth_reach_agent.core.llm import LLMInterface
 
 
 @dataclass
@@ -111,13 +111,13 @@ class GeneratorAgent:
     """GeneratorAgent class for generating weather charts scientific descriptions."""
 
     def __init__(
-        self, llm: BaseLLM, system_prompt: str | None, user_prompt: str
+        self, llm: LLMInterface, system_prompt: str | None, user_prompt: str
     ) -> None:
         """
-        Initialize the GeneratorAgent with a BaseLLM instance and prompts.
+        Initialize the GeneratorAgent with a LLMInterface instance and prompts.
 
         Args:
-            llm (BaseLLM): An instance of a BaseLLM to handle LLM interactions.
+            llm (LLMInterface): An instance of a LLMInterface to handle LLM interactions.
             system_prompt (str | None): Optional system prompt to guide the style of the LLM.
             user_prompt (str): The user prompt containing the instructions for description generation.
         """
@@ -148,7 +148,7 @@ class GeneratorAgent:
                 "Only one of 'figure' or 'image' can be provided, not both."
             )
         if figure is not None:
-            # TODO(medium): If metadata extraction failes, continue without it
+            # TODO(medium): If metadata extraction fails, continue without it
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
                 self.user_prompt, metadata

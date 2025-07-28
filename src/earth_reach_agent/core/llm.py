@@ -1,12 +1,40 @@
 import os
+from abc import ABC, abstractmethod
 
 import openai
+from google import genai
+from google.genai import types
 
-from earth_reach_agent.core.utils import img_to_base64
+from earth_reach_agent.core.utils import img_to_base64, img_to_bytes
 
 
-class BaseLLM:
-    """Base class for a LLM interface."""
+class LLMInterface(ABC):
+    """Abstract base class defining the interface for all LLM provider implementations."""
+
+    @abstractmethod
+    def generate(
+        self, user_prompt: str, system_prompt: str | None = None, image=None
+    ) -> str:
+        """
+        Generate a response from the LLM based on the user prompt and optional system prompt.
+
+        Args:
+            user_prompt (str): The prompt provided by the user to define the task.
+            system_prompt (str | None): An optional system prompt to guide the model's response.
+            image: Optional image to include in the request.
+
+        Returns:
+            str: The generated response content from the LLM.
+
+        Raises:
+            ValueError: If user_prompt is empty/None or if the API response is empty.
+            RuntimeError: For other run-time errors.
+        """
+        pass
+
+
+class OpenAICompatibleLLM(LLMInterface):
+    """Base class for OpenAI-compatible LLM implementations (Groq, OpenAI, etc.)."""
 
     def __init__(
         self,
@@ -105,8 +133,8 @@ class BaseLLM:
         return f"LLM(model_name={self.model_name}, base_url={self.base_url})"
 
 
-class GroqLLM(BaseLLM):
-    """Implementation of the BaseLLM for Groq LLM API Provider."""
+class GroqLLM(OpenAICompatibleLLM):
+    """Implementation of the LLMInterface for Groq LLM API Provider."""
 
     def __init__(self, model_name: str, api_key: str | None = None) -> None:
         """Initialize the Groq LLM with a model name and optional API key.
@@ -135,8 +163,8 @@ class GroqLLM(BaseLLM):
         )
 
 
-class OpenAILLM(BaseLLM):
-    """Implementation of the BaseLLM for OpenAI API Provider."""
+class OpenAILLM(OpenAICompatibleLLM):
+    """Implementation of the LLMInterface for OpenAI API Provider."""
 
     def __init__(self, model_name: str, api_key: str | None = None) -> None:
         """Initialize the OpenAI LLM with a model name and optional API key.
@@ -163,7 +191,99 @@ class OpenAILLM(BaseLLM):
         )
 
 
-def create_llm(provider="groq") -> BaseLLM:
+class GeminiLLM(LLMInterface):
+    """Implementation of the LLMInterface for Google Gemini API Provider."""
+
+    def __init__(self, model_name: str, api_key: str | None = None) -> None:
+        """Initialize the Gemini LLM with a model name and optional API key.
+
+        Args:
+            model_name (str): The name of the Gemini model to use.
+            api_key (str | None): The API key for authentication with the Gemini API.
+
+        Raises:
+            AssertionError: If the API key is not provided and not found in environment variables.
+        """
+
+        if not api_key:
+            api_key = os.environ.get("GEMINI_API_KEY", None)
+            if not api_key:
+                raise AssertionError(
+                    "GEMINI_API_KEY not set. Please set it in your environment variables, or pass it as an argument."
+                )
+
+        self.model_name = model_name
+        self.api_key = api_key
+        self.client = genai.Client(api_key=api_key)
+
+    def generate(
+        self, user_prompt: str, system_prompt: str | None = None, image=None
+    ) -> str:
+        """
+        Generate a response from the Gemini API based on the user prompt and optional system prompt.
+
+        Args:
+            user_prompt (str): The prompt provided by the user to define the task.
+            system_prompt (str | None): An optional system prompt to guide the model's response.
+            image: Optional image to include in the request (PIL Image).
+
+        Returns:
+            str: The generated response content from the Gemini API.
+
+        Raises:
+            ValueError: If user_prompt is empty/None or if the API response is empty.
+            RuntimeError: For other run-time errors.
+        """
+
+        if not user_prompt or not user_prompt.strip():
+            raise ValueError("user_prompt cannot be empty or None")
+
+        try:
+            full_prompt = user_prompt.strip()
+            if system_prompt and system_prompt.strip():
+                full_prompt = f"{system_prompt.strip()}\n\n{user_prompt.strip()}"
+
+            contents = []
+            if image:
+                image_bytes = img_to_bytes(image)
+                if not image_bytes:
+                    raise ValueError("Failed to convert image to bytes")
+
+                contents.append(
+                    types.Part.from_bytes(
+                        data=image_bytes,
+                        mime_type="image/png",
+                    )
+                )
+            contents.append(full_prompt)
+
+        except Exception as e:
+            raise ValueError(f"Failed to process input data: {e}")
+
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=contents,
+            )
+
+            content = response.text
+
+            if not content or not content.strip():
+                raise ValueError("The generated response content is empty")
+
+            return content.strip()
+
+        except ValueError:
+            raise
+        except Exception as e:
+            error_msg = f"API call failed: {type(e).__name__}: {e}"
+            raise RuntimeError(error_msg) from e
+
+    def __repr__(self) -> str:
+        return f"GeminiLLM(model_name={self.model_name})"
+
+
+def create_llm(provider="groq", model_name: str | None = None) -> LLMInterface:
     """
     Create and return LLM instance.
 
@@ -172,23 +292,37 @@ def create_llm(provider="groq") -> BaseLLM:
 
     Args:
         provider (str): LLM provider name (default: "groq")
+        model_name (str | None): Specific model name to use (default: None, uses provider's default)
 
     Returns:
-        BaseLLM: Configured LLM instance
+        LLMInterface: Configured LLM instance
     """
     if provider.lower() == "groq":
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
             raise ValueError("GROQ_API_KEY environment variable is not set.")
-        return GroqLLM(
-            model_name="meta-llama/llama-4-maverick-17b-128e-instruct", api_key=api_key
-        )
+
+        if model_name is None:
+            model_name = "meta-llama/llama-4-maverick-17b-128e-instruct"
+        return GroqLLM(model_name=model_name, api_key=api_key)
+
     elif provider.lower() == "openai":
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is not set.")
-        return OpenAILLM(model_name="o4-mini-2025-04-16", api_key=api_key)
-    else:
-        raise ValueError(
-            f"Unsupported LLM provider: {provider}. Supported providers: 'groq', 'openai'."
-        )
+        if model_name is None:
+            model_name = "o4-mini-2025-04-16"
+        return OpenAILLM(model_name=model_name, api_key=api_key)
+
+    elif provider.lower() == "gemini":
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is not set.")
+
+        if model_name is None:
+            model_name = "gemini-2.5-flash"
+        return GeminiLLM(model_name=model_name, api_key=api_key)
+
+    raise ValueError(
+        f"Unsupported LLM provider: {provider}. Supported providers: 'groq', 'openai', 'gemini'."
+    )
