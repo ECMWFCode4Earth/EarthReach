@@ -283,11 +283,13 @@ class CLI:
                 logger.info(f"Generating description for: {validated_image_path.name}")
 
             if simple:
-                description = generator.generate(image=image)
+                description = generator.generate(
+                    image=image, return_intermediate_steps=False
+                )
             else:
                 description = orchestrator.run(image=image)
 
-            if verbose:
+            if verbose and isinstance(description, str):
                 logger.info("Description generated successfully!")
                 logger.info(f"Description length: {len(description)} characters")
                 logger.info("-" * 50)
