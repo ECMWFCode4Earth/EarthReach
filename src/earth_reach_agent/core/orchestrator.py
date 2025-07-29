@@ -64,7 +64,14 @@ class Orchestrator:
 
         try:
             for i in range(self.max_iterations):
-                description = self.generator_agent.generate(figure=figure, image=image)
+                description = self.generator_agent.generate(
+                    figure=figure, image=image, return_intermediate_steps=False
+                )
+                if not isinstance(description, str):
+                    raise TypeError(
+                        f"Expected description to be a string, got {type(description)}"
+                    )
+
                 if not description:
                     raise ValueError("Generated description is empty.")
 
