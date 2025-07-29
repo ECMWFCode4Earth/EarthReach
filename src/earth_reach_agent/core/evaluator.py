@@ -9,7 +9,7 @@ from PIL import Image
 from PIL.ImageFile import ImageFile
 
 from earth_reach_agent.core.generator import FigureMetadata
-from earth_reach_agent.core.llm import BaseLLM, create_llm
+from earth_reach_agent.core.llm import LLMInterface, create_llm
 from earth_reach_agent.core.prompts.evaluator import (
     get_default_criterion_evaluator_user_prompt,
 )
@@ -49,7 +49,11 @@ class CriterionEvaluator:
     """Evaluator class for evaluating the quality of text based on a specified criterion."""
 
     def __init__(
-        self, criterion: str, llm: BaseLLM, system_prompt: str | None, user_prompt: str
+        self,
+        criterion: str,
+        llm: LLMInterface,
+        system_prompt: str | None,
+        user_prompt: str,
     ) -> None:
         if criterion not in ["coherence", "fluency", "consistency", "relevance"]:
             raise ValueError(f"Unsupported criterion: {criterion}")
@@ -302,13 +306,13 @@ class CriterionEvaluatorFactory:
     """Factory class for creating single criterion evaluator agents."""
 
     @staticmethod
-    def create(criterion: str, llm: BaseLLM | None = None) -> CriterionEvaluator:
+    def create(criterion: str, llm: LLMInterface | None = None) -> CriterionEvaluator:
         """
         Create a CriterionEvaluator instance based on the provided criterion.
 
         Args:
             criterion (str): Criterion name to create evaluators for.
-            llm (BaseLLM | None): Optional LLM instance to use for evaluation.
+            llm (LLMInterface | None): Optional LLM instance to use for evaluation.
 
         Returns:
             CriterionEvaluator: CriterionEvaluator instance.
@@ -329,13 +333,14 @@ class CriterionEvaluatorFactory:
 class EvaluatorAgent:
     """Agent class for evaluating the quality of weather chart descriptions."""
 
-    def __init__(self, criteria: List[str], llm: BaseLLM | None = None) -> None:
+    def __init__(self, criteria: List[str], llm: LLMInterface | None = None) -> None:
         """
         Initialize the EvaluatorAgent.
 
         Args:
             criteria (List[str]): List of criteria to evaluate against.
                 Supported criteria: "coherence", "fluency", "consistency", "relevance".
+            llm (LLMInterface | None): Optional LLM instance to use for evaluation.
 
         Raises:
             ValueError: If an unsupported criterion is provided.
