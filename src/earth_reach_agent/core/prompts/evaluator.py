@@ -183,14 +183,14 @@ You are a scientific communication expert specializing in technical writing asse
 1. **Grammatical Precision**: Error-free grammar with scientific writing conventions
 2. **Meteorological Terminology Accuracy**: Correct usage of technical terms per AMS Glossary standards
 3. **Inference Notation Compliance**: Proper distinction between observed data and inferred processes
-4. **Accessibility-Optimized Language**: Screen reader compatible with prohibited visual references
+4. **Accessibility Language Standards**: No assumptive visual language that excludes blind users
 5. **Professional Scientific Voice**: Consistent, objective tone appropriate for research use
 
 **Critical Language Requirements**:
-- **Prohibited Visual References**: "visible," "shown," "looking at," "clearly," "obviously," "as seen"
+- **Prohibited Assumptive Visual Language**: Phrases that assume the reader has visual access: "as you can see," "if you look at," "clearly visible to the viewer," "obviously shown in the image"
+- **Acceptable Descriptive Visual Language**: Objective descriptions of visual elements (colors, patterns, chart features) that help blind users understand the complete picture
 - **Required Inference Notation**: All dynamic interpretations must be marked (e.g., "inferred from pressure gradients")
 - **Mandatory Unit Consistency**: All meteorological values must include consistent, appropriate units
-- **25-Word Sentence Limit**: Maximum sentence length for accessibility optimization
 
 ## EVALUATION PROCESS
 
@@ -201,8 +201,7 @@ You are a scientific communication expert specializing in technical writing asse
 1. **Grammatical Error Detection**: Check subject-verb agreement, tense consistency, pronoun clarity, parallel structure
 2. **Scientific Writing Conventions**: Verify appropriate passive/active voice usage, objective tone, precise language
 3. **Punctuation Accuracy**: Special attention to complex quantitative information, coordinate lists, unit specifications
-4. **Sentence Length Compliance**: Ensure no sentences exceed 25 words while maintaining clarity
-5. **Sentence Structure Variety**: Assess appropriate variation in structure for readability without sacrificing precision
+4. **Sentence Structure Variety**: Assess appropriate variation in structure for readability without sacrificing precision
 
 **Grammar Quality Examples**:
 - **Excellent**: "The Icelandic low (988 hPa) creates steep pressure gradients across 200 km, driving winds (inferred) exceeding 25 m/s through geostrophic balance."
@@ -222,25 +221,41 @@ You are a scientific communication expert specializing in technical writing asse
 - **Correct**: "anticyclonic circulation," "geostrophic wind," "baroclinic zone," "subsidence inversion"
 - **Incorrect**: "cyclonic high pressure" (contradictory), "windspeed" (should be two words), "temperature gradient" without quantification
 
-### Step 3: Inference Notation and Accessibility Language (Accessibility Analysis)
-**Objective**: Evaluate proper distinction between observations and inferences, plus accessibility-optimized language
+### Step 3: Inference Notation Compliance (Scientific Rigor Analysis)
+**Objective**: Evaluate proper distinction between observed data and inferred processes
 
-**How to Assess Inference Notation and Accessibility**:
-1. **Inference Marking Compliance**: Verify all dynamic interpretations properly marked (winds, weather conditions, circulation patterns)
-2. **Prohibited Visual Language Detection**: Check for banned phrases that assume visual chart access
-3. **Screen Reader Optimization**: Assess language flow and structure for audio consumption compatibility
-4. **Spatial Reference Clarity**: Ensure spatial relationships expressed through explicit coordinate/directional language
-5. **Linear Text Logic**: Verify complex spatial relationships understandable in sequential text format
+**How to Assess Inference Notation**:
+1. **Dynamic Process Marking**: Verify all interpreted movements, winds, and weather processes are marked as inferences
+2. **Observation vs. Interpretation Clarity**: Check clear distinction between measured data and meteorological interpretations
+3. **Inference Marking Consistency**: Ensure inference notation applied uniformly throughout description
+4. **Appropriate Inference Language**: Verify use of proper qualifying terms (inferred, likely, estimated, suggested by)
 
 **Inference Notation Examples**:
 - **Correct**: "Strong westerly winds (inferred from 8 hPa/200 km pressure gradient) likely exceed 30 m/s."
-- **Incorrect**: "Strong westerly winds are visible across the region." (visual reference, no inference marking)
+- **Correct**: "The circulation pattern, inferred from isobar configuration, suggests cyclonic rotation."
+- **Incorrect**: "Strong westerly winds exceed 30 m/s across the region." (unmarked dynamic interpretation)
+- **Incorrect**: "The low pressure system is moving eastward." (unmarked inference about movement)
 
-**Accessibility Language Examples**:
-- **Accessible**: "The low pressure center, positioned at 55°N, 15°W, creates circulation patterns..."
-- **Inaccessible**: "The low shown in the upper left creates obvious circulation patterns..." (visual references)
+### Step 4: Accessibility Language Standards (Inclusivity Analysis)
+**Objective**: Evaluate absence of assumptive visual language and quality of spatial descriptions
 
-### Step 4: Professional Scientific Voice and Consistency (Style Analysis)
+**How to Assess Accessibility Language**:
+1. **Assumptive Language Detection**: Identify phrases that assume visual access to the chart
+2. **Spatial Reference Quality**: Verify spatial relationships use explicit coordinates/directions
+3. **Visual Element Description**: Ensure objective description of colors, patterns when mentioned
+4. **Navigation Independence**: Check that description doesn't require visual navigation
+
+**Assumptive Visual Language Examples**:
+- **Unacceptable**: "As you can see in the chart," "clearly visible," "if you look at," "obviously shown"
+- **Acceptable**: "The chart displays," "The data indicates," "Located at 50°N"
+
+**Visual Element Description Examples**:
+- **Good**: "This weather chart displays temperatures using colors from blue (-30°C) to orange (20°C)"
+- **Poor**: "As you can see, the blue areas are cold" (assumes visual access)
+- **Good**: "The low pressure center, positioned at 55°N, 15°W, creates circulation patterns..."
+- **Poor**: "The low shown in the upper left creates obvious circulation patterns..." (spatial assumption)
+
+### Step 5: Professional Scientific Voice and Consistency (Style Analysis)
 **Objective**: Evaluate maintenance of appropriate scientific tone and consistent professional voice
 
 **How to Assess Scientific Voice and Consistency**:
@@ -259,66 +274,44 @@ You are a scientific communication expert specializing in technical writing asse
 **Score 5 - Exceptional Fluency**
 - Flawless grammar with perfect adherence to scientific writing conventions and 25-word sentence limits
 - Perfect meteorological terminology per AMS Glossary standards with complete unit consistency
-- All inferred processes properly marked with complete absence of prohibited visual language
-- Exceptional screen reader optimization with seamless quantitative integration
+- All inferred processes properly marked with consistent inference notation
+- Complete absence of assumptive visual language with clear spatial descriptions
 - Exemplary professional scientific voice maintaining perfect objectivity and credibility
 
 **Score 4 - Strong Fluency**
 - Minor grammatical issues that don't impair understanding, good sentence length control
 - Correct meteorological terminology with minor unit inconsistencies
-- Most inferences properly marked with minimal visual language violations
-- Good screen reader compatibility with occasional integration disruptions
+- Most inferences properly marked with good observation/interpretation distinction
+- Minimal assumptive language with generally accessible descriptions
 - Professional scientific tone with minor voice consistency issues
 
 **Score 3 - Adequate Fluency**
-- Some grammatical errors or sentence length violations that require extra effort to understand
+- Some grammatical errors that require extra effort to understand
 - Generally correct terminology with noticeable unit inconsistencies or minor term misusage
-- Adequate inference marking but some unmarked interpretations or occasional visual references
-- Basic screen reader accessibility but some flow disruptions or unclear spatial language
+- Adequate inference marking but some unmarked interpretations
+- Occasional assumptive visual language or unclear spatial references
 - Scientific tone maintained with occasional unprofessional lapses or voice shifts
 
 **Score 2 - Poor Fluency**
 - Frequent grammatical errors, sentence length violations, or awkward constructions that impede comprehension
 - Significant meteorological terminology errors or widespread unit inconsistencies
-- Poor inference marking with frequent visual language violations
-- Compromised screen reader accessibility due to poor spatial language or integration issues
+- Poor inference marking with many unmarked dynamic processes
+- Frequent assumptive visual language compromising accessibility
 - Inconsistent scientific tone with frequent unprofessional expressions
 
 **Score 1 - Very Poor Fluency**
 - Major grammatical problems throughout with extensive sentence length violations
 - Substantial meteorological terminology errors that compromise scientific accuracy
-- Minimal inference marking with pervasive visual language assumptions
-- Severely compromised accessibility with poor screen reader optimization
+- Minimal inference marking throughout description
+- Pervasive assumptive visual language making text inaccessible
 - Unprofessional tone with frequent voice inconsistencies and credibility issues
 
 **Score 0 - No Fluency**
 - Extensive grammatical errors making text barely comprehensible
 - Incorrect meteorological terminology throughout undermining scientific validity
-- Complete absence of inference marking with pervasive visual assumptions
-- Completely inaccessible for screen reader users
+- Complete absence of inference marking for dynamic processes
+- Pervasive visual assumptions making description unusable for blind users
 - Entirely inappropriate scientific voice destroying credibility
-
-## CRITICAL EVALUATION STANDARDS
-
-**Pass-Fail Thresholds** (Automatic scoring guidance):
-- **Prohibited visual language present** ("visible," "shown," "clearly," etc.): Maximum score 2
-- **Missing inference notation** for dynamic interpretations: Maximum score 2
-- **Major meteorological terminology errors**: Maximum score 2
-- **Frequent sentence length violations** (>25 words): Maximum score 3
-
-**Excellence Indicators** (Score 4-5 requirements):
-- **Complete absence** of prohibited visual language
-- **Perfect inference marking** for all dynamic interpretations
-- **AMS Glossary compliance** for all meteorological terminology
-- **Flawless accessibility optimization** for screen reader users
-
-## COMMON PITFALLS TO AVOID
-
-1. **Complexity vs. Clarity Confusion**: Don't penalize necessary meteorological precision that aids comprehension
-2. **Visual Language Tolerance**: Zero tolerance for visual assumptions - these destroy accessibility
-3. **Inference Notation Leniency**: Missing inference marking compromises scientific integrity
-4. **Terminology Assumption**: Verify AMS Glossary compliance rather than assuming correctness
-5. **Screen Reader Ignorance**: Consider audio consumption patterns, punctuation effects, and spatial language clarity
 
 ## OUTPUT REQUIREMENTS
 
@@ -337,6 +330,7 @@ Provide your evaluation in the following XML format:
 
 **Success Check**: Your evaluation should enable a developer to understand exactly what linguistic strengths or weaknesses exist in the description and provide actionable guidance for improvement.
 """
+
 DEFAULT_CONSISTENCY_CRITERIA_EVALUATOR_USER_PROMPT = """# "Consistency" Criteria Evaluation Prompt
 
 ## ROLE AND CONTEXT SETTING
