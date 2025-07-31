@@ -1,9 +1,11 @@
 from typing import List
 
 import earthkit.plots as ekp
+from earthkit.data import FieldList
 from PIL.ImageFile import ImageFile
 
 from earth_reach_agent.config.logging import get_logger
+from earth_reach_agent.core.data_extractor import DataExtractorInterface
 from earth_reach_agent.core.evaluator import CriterionEvaluatorOutput, EvaluatorAgent
 from earth_reach_agent.core.generator import GeneratorAgent
 from earth_reach_agent.core.prompts.orchestrator import get_default_feedback_template
@@ -18,6 +20,7 @@ class Orchestrator:
         self,
         generator_agent: GeneratorAgent,
         evaluator_agent: EvaluatorAgent,
+        data_extractors: List[DataExtractorInterface] = [],
         max_iterations: int = 3,
         criteria_threshold: int = 4,
         feedback_template: str | None = None,
@@ -28,12 +31,14 @@ class Orchestrator:
         Args:
             generator_agent: Instance of GeneratorAgent for generating descriptions
             evaluator_agent: Instance of EvaluatorAgent for evaluating descriptions
+            data_extractors: List of DataExtractorInterface instances for extracting features
             max_iterations: Maximum number of iterations for generating descriptions
             criteria_threshold: Minimum score for evaluation criteria to pass
             feedback_template: Template for feedback to the generator agent (optional)
         """
         self.generator_agent = generator_agent
         self.evaluator_agent = evaluator_agent
+        self.data_extractors = data_extractors
         self.max_iterations = max_iterations
         self.criteria_threshold = criteria_threshold
         self.feedback_template = feedback_template or get_default_feedback_template()
@@ -45,14 +50,18 @@ class Orchestrator:
         }
 
     def run(
-        self, figure: ekp.Figure | None = None, image: ImageFile | None = None
+        self,
+        figure: ekp.Figure | None = None,
+        image: ImageFile | None = None,
+        data: FieldList | None = None,
     ) -> str:
-        """Run the iterative process of generating and evaluating a weather chart description
-        until quality criteria are met.
+        """
+        Run the iterative process of generating and evaluating a weather chart description until quality criteria are met.
 
         Args:
-            figure (Figure | None): Optional figure to include in the request. Can't be used with image.
-            image (ImageFile | None): Optional image to include in the request (will be converted to base64). Can't be used with figure.
+            figure (Figure | None): Optional figure to use to generate a description. Can't be used with image.
+            image (ImageFile | None): Optional image to use to generate a description (will be converted to base64). Can't be used with figure.
+            data (FieldList | None): Optional data to use to generate a description.
 
         Returns:
             str: The final weather description.
@@ -61,6 +70,11 @@ class Orchestrator:
             raise ValueError(
                 "Only one of 'figure' or 'image' can be provided, not both."
             )
+
+        # TODO(high): to integrate with the list of data extractors, verify that pressure and temperature fields are present
+        # if one of them is not present, log a warning
+        # if present then try to extract features from the data
+        # then add the features to the generator user prompt and evaluator prompt using a method similar to `provide_feedback_to_generator` that uses `append_user_prompt`
 
         try:
             for i in range(self.max_iterations):

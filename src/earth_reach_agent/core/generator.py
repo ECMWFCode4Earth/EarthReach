@@ -151,7 +151,7 @@ class GeneratorAgent:
                 "Only one of 'figure' or 'image' can be provided, not both."
             )
         if figure is not None:
-            # TODO(medium): If metadata extraction fails, continue without it
+            # TODO(medium): If metadata extraction fails at any point, generate image and continue without figure metadata
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
                 self.user_prompt, metadata
