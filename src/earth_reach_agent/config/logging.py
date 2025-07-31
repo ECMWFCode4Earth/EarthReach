@@ -9,7 +9,7 @@ from typing import Optional
 
 def setup_logging(level: Optional[str] = None) -> None:
     """
-    Configure logging for the entire application.
+    Configure logging for the application.
 
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
