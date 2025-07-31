@@ -272,7 +272,7 @@ class GeneratorAgent:
         if not metadata_items:
             return user_prompt
 
-        metadata_str = "# FIGURE METADATA\n\n"
+        metadata_str = "## FIGURE METADATA\n\n"
         metadata_str += "The following metadata was extracted from the figure:\n\n"
         metadata_str += "\n".join(metadata_items)
 
