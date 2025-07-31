@@ -1,14 +1,14 @@
-import logging
 from typing import List
 
 import earthkit.plots as ekp
 from PIL.ImageFile import ImageFile
 
+from earth_reach_agent.config.logging import get_logger
 from earth_reach_agent.core.evaluator import CriterionEvaluatorOutput, EvaluatorAgent
 from earth_reach_agent.core.generator import GeneratorAgent
 from earth_reach_agent.core.prompts.orchestrator import get_default_feedback_template
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Orchestrator:

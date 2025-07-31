@@ -3,7 +3,6 @@
 CLI entrypoint for generating weather chart descriptions.
 """
 
-import logging
 import os
 import sys
 from pathlib import Path
@@ -14,17 +13,14 @@ from dotenv import load_dotenv
 from PIL import Image
 
 from earth_reach_agent.config.criteria import QualityCriteria
+from earth_reach_agent.config.logging import get_logger
 from earth_reach_agent.core.evaluator import EvaluatorAgent
 from earth_reach_agent.core.generator import GeneratorAgent
 from earth_reach_agent.core.llm import create_llm
 from earth_reach_agent.core.orchestrator import Orchestrator
 from earth_reach_agent.core.prompts.generator import get_default_generator_user_prompt
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 load_dotenv()
 

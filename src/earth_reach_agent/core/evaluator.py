@@ -1,4 +1,3 @@
-import logging
 import re
 from dataclasses import MISSING, dataclass, fields
 from io import BytesIO
@@ -8,13 +7,14 @@ import earthkit.plots as ekp
 from PIL import Image
 from PIL.ImageFile import ImageFile
 
+from earth_reach_agent.config.logging import get_logger
 from earth_reach_agent.core.generator import FigureMetadata
 from earth_reach_agent.core.llm import LLMInterface, create_llm
 from earth_reach_agent.core.prompts.evaluator import (
     get_default_criterion_evaluator_user_prompt,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

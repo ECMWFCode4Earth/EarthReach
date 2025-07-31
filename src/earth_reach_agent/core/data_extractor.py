@@ -1,11 +1,14 @@
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from scipy.ndimage import gaussian_filter, maximum_filter, minimum_filter
+
+from earth_reach_agent.config.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -43,15 +46,13 @@ class DataExtractorInterface(ABC):
     meteorological features from various data sources.
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None, verbose: bool = True):
+    def __init__(self, verbose: bool = True):
         """
         Initialize the data extractor.
 
         Args:
-            logger: Optional logger instance
             verbose: Whether to print progress messages
         """
-        self.logger = logger or logging.getLogger(self.__class__.__name__)
         self.verbose = verbose
         self._data = None
         self._metadata = {}
@@ -98,14 +99,6 @@ class DataExtractorInterface(ABC):
             Formatted output dictionary
         """
         pass
-
-    def _log(self, message: str, level: str = "info"):
-        """Internal logging helper."""
-        if self.verbose:
-            print(f"[{self.__class__.__name__}] {message}")
-
-        log_func = getattr(self.logger, level, self.logger.info)
-        log_func(message)
 
 
 class PressureCenterDataExtractor(DataExtractorInterface):
@@ -175,11 +168,11 @@ class PressureCenterDataExtractor(DataExtractorInterface):
             if lats is None or lons is None:
                 raise ValueError("Could not extract latitude/longitude coordinates")
 
-            self._log(f"Validation passed. Found {self.pressure_var_name} variable.")
+            logger.info(f"Validation passed. Found {self.pressure_var_name} variable.")
             return True
 
         except Exception as e:
-            self._log(f"Validation failed: {str(e)}", level="error")
+            logger.error(f"Validation failed: {str(e)}")
             raise
 
     def extract(
@@ -206,7 +199,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
 
         if smoothing and self.sigma > 0:
             pressure_smoothed = gaussian_filter(pressure_array, sigma=self.sigma)
-            self._log(f"Applied Gaussian smoothing with sigma={self.sigma}")
+            logger.info(f"Applied Gaussian smoothing with sigma={self.sigma}")
         else:
             pressure_smoothed = pressure_array.copy()
 
@@ -228,7 +221,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
 
         final_centers = self._filter_by_distance(filtered_centers, lats, lons)
 
-        self._log(
+        logger.info(
             f"Extracted {len(final_centers)} pressure centers "
             f"({sum(1 for c in final_centers if c.center_type == 'high')} high, "
             f"{sum(1 for c in final_centers if c.center_type == 'low')} low)"
