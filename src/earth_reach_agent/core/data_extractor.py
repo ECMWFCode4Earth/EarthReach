@@ -88,15 +88,16 @@ class DataExtractorInterface(ABC):
         pass
 
     @abstractmethod
-    def format_output(self, features: List[Any]) -> Dict[str, Any]:
+    def add_data_to_prompt(self, prompt: str, features: List[Any]) -> str:
         """
-        Format extracted features for output.
+        Format data and add them to the prompt.
 
         Args:
+            prompt: Prompt string to modify
             features: List of extracted features
 
         Returns:
-            Formatted output dictionary
+            str: Updated prompt with formatted data
         """
         pass
 
@@ -337,58 +338,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
 
         return R * c
 
-    def format_output(self, features: List[PressureCenter]) -> Dict[str, Any]:
-        """
-        Format pressure centers for output.
-
-        Returns a dictionary suitable for JSON serialization or
-        further processing for verbal descriptions.
-        """
-        output = {
-            "extraction_type": "pressure_centers",
-            "timestamp": datetime.now().isoformat(),
-            "parameters": {
-                "sigma": self.sigma,
-                "min_distance_km": self.min_distance,
-                "min_intensity_hPa": self.min_intensity,
-                "neighborhood": self.neighborhood,
-            },
-            "summary": {
-                "total_centers": len(features),
-                "high_pressure_centers": sum(
-                    1 for f in features if f.center_type == "high"
-                ),
-                "low_pressure_centers": sum(
-                    1 for f in features if f.center_type == "low"
-                ),
-            },
-            "centers": [f.to_dict() for f in features],
-        }
-
-        if features:
-            high_centers = [f for f in features if f.center_type == "high"]
-            low_centers = [f for f in features if f.center_type == "low"]
-
-            description_parts = []
-
-            if high_centers:
-                strongest_high = max(high_centers, key=lambda c: c.pressure_hPa)
-                description_parts.append(
-                    f"{len(high_centers)} high pressure center(s), "
-                    f"strongest at {strongest_high.pressure_hPa:.1f} hPa "
-                    f"near {strongest_high.latitude:.1f}°N, {strongest_high.longitude:.1f}°E"
-                )
-
-            if low_centers:
-                strongest_low = min(low_centers, key=lambda c: c.pressure_hPa)
-                description_parts.append(
-                    f"{len(low_centers)} low pressure center(s), "
-                    f"deepest at {strongest_low.pressure_hPa:.1f} hPa "
-                    f"near {strongest_low.latitude:.1f}°N, {strongest_low.longitude:.1f}°E"
-                )
-
-            output["verbal_summary"] = ". ".join(description_parts)
-        else:
-            output["verbal_summary"] = "No significant pressure centers detected"
-
-        return output
+    def format_output(self, prompt: str, features: List[PressureCenter]) -> str:
+        raise NotImplementedError(
+            "Should implement this method before use with DataExtractor"
+        )
