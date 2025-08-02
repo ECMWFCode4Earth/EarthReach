@@ -16,7 +16,6 @@ dependencies = [
     "python-dotenv>=1.1.0",
     "hatchling>=1.27.0",
     "fire @ git+https://github.com/google/python-fire.git@2025-03-23-ipython", # Fixes IPython v9.0 compatibility issue
-    "google-genai>=1.27.0",
 ]
 
 [dependency-groups]
@@ -25,6 +24,18 @@ dev = [
     "ipykernel>=6.29.5",
     "ruff>=0.12.7",
     "pytest>=8.3.5",
+]
+
+[project.optional-dependencies]
+gemini = [
+    "google-genai>=1.27.0",
+]
+claude = [
+    "anthropic>=0.60.0",
+]
+all-models = [ 
+    "google-genai>=1.27.0", 
+    "anthropic>=0.60.0" 
 ]
 
 [project.scripts]

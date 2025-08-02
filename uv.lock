@@ -26,6 +26,24 @@ wheels = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.60.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4e/03/3334921dc54ed822b3dd993ae72d823a7402588521bbba3e024b3333a1fd/anthropic-0.60.0.tar.gz", hash = "sha256:a22ba187c6f4fd5afecb2fc913b960feccf72bc0d25c1b7ce0345e87caede577", size = 425983 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/bb/d84f287fb1c217b30c328af987cf8bbe3897edf0518dcc5fa39412f794ec/anthropic-0.60.0-py3-none-any.whl", hash = "sha256:65ad1f088a960217aaf82ba91ff743d6c89e9d811c6d64275b9a7c59ee9ac3c6", size = 293116 },
+]
+
+[[package]]
 name = "anyio"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -480,10 +498,21 @@ dependencies = [
     { name = "earthkit-data" },
     { name = "earthkit-plots" },
     { name = "fire" },
-    { name = "google-genai" },
     { name = "hatchling" },
     { name = "openai" },
     { name = "python-dotenv" },
+]
+
+[package.optional-dependencies]
+all-models = [
+    { name = "anthropic" },
+    { name = "google-genai" },
+]
+claude = [
+    { name = "anthropic" },
+]
+gemini = [
+    { name = "google-genai" },
 ]
 
 [package.dev-dependencies]
@@ -496,15 +525,19 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anthropic", marker = "extra == 'all-models'", specifier = ">=0.60.0" },
+    { name = "anthropic", marker = "extra == 'claude'", specifier = ">=0.60.0" },
     { name = "earthkit", specifier = ">=0.10.3" },
     { name = "earthkit-data", specifier = ">=0.13.8" },
     { name = "earthkit-plots", specifier = ">=0.3.1" },
     { name = "fire", git = "https://github.com/google/python-fire.git?rev=2025-03-23-ipython" },
-    { name = "google-genai", specifier = ">=1.27.0" },
+    { name = "google-genai", marker = "extra == 'all-models'", specifier = ">=1.27.0" },
+    { name = "google-genai", marker = "extra == 'gemini'", specifier = ">=1.27.0" },
     { name = "hatchling", specifier = ">=1.27.0" },
     { name = "openai", specifier = ">=1.77.0" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
 ]
+provides-extras = ["gemini", "claude", "all-models"]
 
 [package.metadata.requires-dev]
 dev = [
