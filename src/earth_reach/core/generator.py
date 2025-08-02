@@ -4,10 +4,9 @@ from io import BytesIO
 from typing import List
 
 import earthkit.plots as ekp
+from earth_reach.core.llm import LLMInterface
 from PIL import Image
 from PIL.ImageFile import ImageFile
-
-from earth_reach_agent.core.llm import LLMInterface
 
 
 @dataclass

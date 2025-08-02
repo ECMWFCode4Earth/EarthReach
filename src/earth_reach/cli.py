@@ -10,15 +10,14 @@ from typing import List
 
 import fire
 from dotenv import load_dotenv
+from earth_reach.config.criteria import QualityCriteria
+from earth_reach.config.logging import get_logger
+from earth_reach.core.evaluator import EvaluatorAgent
+from earth_reach.core.generator import GeneratorAgent
+from earth_reach.core.llm import create_llm
+from earth_reach.core.orchestrator import Orchestrator
+from earth_reach.core.prompts.generator import get_default_generator_user_prompt
 from PIL import Image
-
-from earth_reach_agent.config.criteria import QualityCriteria
-from earth_reach_agent.config.logging import get_logger
-from earth_reach_agent.core.evaluator import EvaluatorAgent
-from earth_reach_agent.core.generator import GeneratorAgent
-from earth_reach_agent.core.llm import create_llm
-from earth_reach_agent.core.orchestrator import Orchestrator
-from earth_reach_agent.core.prompts.generator import get_default_generator_user_prompt
 
 logger = get_logger(__name__)
 

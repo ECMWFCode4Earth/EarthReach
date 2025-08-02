@@ -4,9 +4,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
+from earth_reach.config.logging import get_logger
 from scipy.ndimage import gaussian_filter, maximum_filter, minimum_filter
-
-from earth_reach_agent.config.logging import get_logger
 
 logger = get_logger(__name__)
 

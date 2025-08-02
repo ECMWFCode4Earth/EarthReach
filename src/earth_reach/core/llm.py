@@ -2,10 +2,9 @@ import os
 from abc import ABC, abstractmethod
 
 import openai
+from earth_reach.core.utils import img_to_base64, img_to_bytes
 from google import genai
 from google.genai import types
-
-from earth_reach_agent.core.utils import img_to_base64, img_to_bytes
 
 
 class LLMInterface(ABC):

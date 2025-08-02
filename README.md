@@ -52,7 +52,7 @@ You're now ready to use the project.
 ├── docs/                     # Project documentation
 ├── notebooks/                # Tutorials & experiments
 ├── src/
-│   ├── earth_reach_agent/    # Main package
+│   ├── earth_reach/    # Main package
 │   └── tests/                # Unit and integration tests (to come)
 ├── vllm/                     # VLLM inference server setup
 ├── pyproject.toml            # Project dependencies and metadata

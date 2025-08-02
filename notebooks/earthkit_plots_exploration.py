@@ -9,7 +9,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.17.1
 #   kernelspec:
-#     display_name: .venv
+#     display_name: EarthReach
 #     language: python
 #     name: python3
 # ---
@@ -23,18 +23,24 @@
 # %%
 import base64
 import os
+import time
 import warnings
 from io import BytesIO
 from pathlib import Path
-import pandas as pd
+from typing import Dict, List
 
-from earthkit.data import cache, config
 import earthkit as ek
 import openai
-from PIL import Image
-from typing import List, Dict
+import pandas as pd
 from dotenv import load_dotenv
+from earthkit.data import cache, config
 from IPython.display import Markdown, display
+from PIL import Image
+from tqdm import tqdm
+
+from earth_reach.core.generator import GeneratorAgent
+from earth_reach.core.llm import GroqLLM
+from earth_reach.core.prompts.generator import get_default_generator_user_prompt
 
 load_dotenv(Path().cwd().parent / ".env")
 
@@ -47,6 +53,32 @@ print("cache:", cache.directory())
 # %% [markdown]
 # ## Definitions
 
+
+# %%
+def get_weather_data(
+    date: str,
+    times: List[str] = ["12:00"],
+    variables: List[str] = ["2m_temperature", "mean_sea_level_pressure"],
+    dataset: str = "reanalysis-era5-single-levels",
+):
+    date_list = date.split("/")
+
+    request = {
+        "product_type": ["reanalysis"],
+        "variable": variables,
+        "day": [date_list[0]],
+        "month": [date_list[1]],
+        "year": [date_list[2]],
+        "time": times,
+        "data_format": "grib",
+        "download_format": "unarchived",
+    }
+
+    data = ek.data.from_source("cds", dataset, request)
+
+    return data
+
+
 # %%
 def display_markdown(text: str) -> None:
     """
@@ -58,7 +90,7 @@ def display_markdown(text: str) -> None:
     display(Markdown(text))
 
 
-def img_to_base64(image_path: str | None = None, img = None) -> str:
+def img_to_base64(image_path: str | None = None, img=None) -> str:
     """
     Convert an image to a base64 string.
 
@@ -138,29 +170,8 @@ data.ls()
 
 # %%
 # Copernicus datastore, requires API key set
-dataset = "reanalysis-era5-single-levels"
-
-
-def get_weather_data(date: str):
-    date_list = date.split("/")
-
-    request = {
-        "product_type": ["reanalysis"],
-        "variable": ["2m_temperature", "mean_sea_level_pressure"],
-        "day": [date_list[0]],
-        "month": [date_list[1]],
-        "year": [date_list[2]],
-        "time": ["12:00"],
-        "data_format": "grib",
-        "download_format": "unarchived",
-    }
-
-    data = ek.data.from_source("cds", dataset, request)
-
-    return data
-
-
 event_date = "12/03/2011"
+
 data = get_weather_data(event_date)
 
 data.ls()
@@ -213,7 +224,7 @@ def save_weather_event_images(weather_events, output_dir="weather_images"):
                         sub_data,
                         units=["celsius", "hPa"],
                         mode="overlay",
-                        **kwargs, # type: ignore
+                        **kwargs,  # type: ignore
                     )
                     figure.save(buffer, format="png")
 
@@ -244,7 +255,84 @@ def save_weather_event_images(weather_events, output_dir="weather_images"):
     return metadata_df
 
 
+# %%
 metadata_df = save_weather_event_images(weather_events)
+
+# %% [markdown]
+# Chart to generate again with wind vectors: 13, cold_wave, Europe, 27/02/2018
+
+# %%
+output_dir = str(Path().cwd().parent / "data" / "weather_images")
+
+figure_id = 13
+date_str = "27/02/2018"
+domain_type = "Europe"
+variables = [
+    "10m_u_component_of_wind",
+    "10m_v_component_of_wind",
+    "2m_temperature",
+    "mean_sea_level_pressure",
+]
+
+data = get_weather_data(date_str, variables=variables)
+
+data.ls()
+
+# %%
+f = ek.plots.Map(domain=["Europe"])
+
+temperature = data.sel(short_name="2t")
+pressure = data.sel(short_name="msl")
+
+f.quickplot(temperature, units="celsius")
+f.quickplot(pressure, units="hPa")
+
+f.title(
+    "2m Temperature (C), Mean Sea Level Pressure (hPa), and Wind Vectors on 27/02/2018 in Europe",
+)
+
+f.coastlines(color="white", linewidth=2)
+f.gridlines()
+
+f.quiver(
+    u=data.sel(short_name="10u"),
+    v=data.sel(short_name="10v"),
+)
+
+f.legend()
+
+f.show()
+
+# %%
+sub_data = data.sel(param=["2t", "msl", "10u", "10v"], typeOfLevel="surface")
+
+kwargs: Dict[str, List] = (
+    {"domain": [domain_type]} if domain_type.lower() != "global" else {}
+)
+
+buffer = BytesIO()
+figure = ek.plots.quickplot(
+    sub_data,
+    # units=["celsius", "hPa"],
+    mode="overlay",
+    **kwargs,  # type: ignore
+)
+
+# TODO(high): quiver doesn't exist for a classic figure, so I need to figure out
+#             how to make a figure and a Map work together to plot the wind vectors
+#             and the temperature/pressure overlay.
+# figure.quiver(
+# u=data.sel(shortName="10u"),
+# v=data.sel(shortName="10v"),
+# resample=Subsample(1, mode="stride"),
+# )
+figure.save(buffer, format="png")
+
+image_filename = f"figure_{figure_id}_wind.png"
+image_path = os.path.join(output_dir, image_filename)
+buffer.seek(0)
+img = Image.open(buffer)
+img.save(image_path)
 
 # %% [markdown]
 # ## Exploring GRIB data
@@ -580,3 +668,379 @@ This weather chart visualization shows 2-meter temperature and mean sea level pr
 description = call_llm_api(enhanced_prompt, img)
 
 display_markdown(description)
+
+# %% [markdown]
+# ## Generating Summaries for All Charts with Generator Agent
+
+# %%
+images_dir_path = Path().cwd().parent / "data" / "weather_images"
+csv_path = images_dir_path / "figure_metadata.csv"
+
+llm = GroqLLM(
+    model_name="meta-llama/llama-4-maverick-17b-128e-instruct",
+    api_key=os.environ.get("GROQ_API_KEY"),
+)
+
+generator = GeneratorAgent(
+    llm=llm,
+    user_prompt=DEFAULT_USER_PROMPT,
+    system_prompt=None,
+)
+
+image_files = list(images_dir_path.glob("figure_*.png"))
+df = pd.read_csv(csv_path)
+
+if "description" not in df.columns:
+    df["description"] = None
+
+DELAY_SECONDS = 2
+SAVE_EVERY = 1
+
+processed_count = 0
+for idx, row in tqdm(df.iterrows(), desc="Generating descriptions"):
+    if pd.isna(row["description"]):
+        figure_id = row["figure_id"]
+        image_path = images_dir_path / f"figure_{figure_id}.png"
+
+        if image_path.exists():
+            try:
+                image = Image.open(image_path)
+                description = generator.generate(image)
+                df.at[idx, "description"] = description
+                print(f"✓ Generated description for figure_{figure_id}")
+
+            except Exception as e:
+                df.at[idx, "description"] = f"FAILED: {str(e)}"
+                print(f"✗ Failed figure_{figure_id}: {e}")
+
+            processed_count += 1
+
+            if processed_count % SAVE_EVERY == 0:
+                df.to_csv(csv_path, index=False)
+                print(f"💾 Progress saved ({processed_count} processed)")
+
+            time.sleep(DELAY_SECONDS)
+
+df.to_csv(csv_path, index=False)
+print(f"Results saved to: {csv_path}")
+
+# %% [markdown]
+# ## Reviewing Generated Summaries
+
+# %%
+images_dir_path = Path().cwd().parent / "data" / "weather_images"
+csv_path = images_dir_path / "figure_metadata.csv"
+
+# %%
+image_files = list(images_dir_path.glob("figure_*.png"))
+df = pd.read_csv(csv_path)
+df
+
+# %%
+from textwrap import fill
+
+
+def show_image_with_description(image_path: Path, description: str):
+    """
+    Display an image with its description.
+
+    Args:
+        image_path (Path): Path to the image file.
+        description (str): Description of the image.
+    """
+    if image_path.exists():
+        try:
+            image = Image.open(image_path)
+            print(
+                fill(description, width=80)
+            )  # Format description for better readability
+            return image
+        except Exception as e:
+            print(f"Error displaying image {image_path}: {e}")
+
+
+# %%
+figure_id = 13
+figure_path = images_dir_path / f"figure_{figure_id}.png"
+description = df.loc[df["figure_id"] == figure_id, "description"].values[0]
+
+show_image_with_description(figure_path, description)
+
+# %% [markdown]
+# ## Testing Improved Generator Prompt
+
+# %%
+from pathlib import Path
+
+from dotenv import load_dotenv
+from PIL import Image
+
+from earth_reach.core.generator import GeneratorAgent
+from earth_reach.core.llm import create_llm
+
+load_dotenv(Path().cwd().parent / ".env")
+
+# %%
+figure_id = 13
+images_dir_path = Path().cwd().parent / "data" / "weather_images"
+figure_path = images_dir_path / f"figure_{figure_id}.png"
+img = Image.open(figure_path)
+img
+
+# %%
+llm = create_llm(
+    provider="gemini",
+    model_name="gemini-2.5-pro",
+)
+
+# %%
+generator = GeneratorAgent(
+    llm=llm,
+    user_prompt=get_default_generator_user_prompt(),
+    system_prompt=None,
+)
+
+# %%
+output = generator.generate(
+    image=img,
+    return_intermediate_steps=True,
+)
+print(output)
+
+# %%
+print(
+    fill(
+        'This weather chart displays 2-meter temperature and mean sea level pressure over Europe and North Africa for 12:00 UTC on February 27, 2018. The map domain extends from approximately 25°N to 70°N and 10°W to 45°E. Temperatures range from below -30°C (blue/purple) to over 20°C (orange), with green tones near 0°C. Isobars are drawn at 4 hPa intervals.\n\nThe synoptic situation is dominated by an exceptionally intense and large high-pressure system centered over Scandinavia and northwestern Russia. The central pressure of this anticyclone exceeds 1052 hPa. This system governs the weather pattern across the entire continent, representing a significant anomaly for late boreal winter. Its presence establishes a powerful blocking pattern, preventing milder Atlantic air from reaching Europe.\n\nThe primary consequence of this high is a severe cold air outbreak. Inferred from the anticyclonic (clockwise) circulation, strong easterly winds advect frigid continental air from Siberia westward across Europe. This results in extremely low temperatures across a vast area. Scandinavia, the Baltic states, and northern Russia experience temperatures between -15°C and -30°C. The cold air penetrates deep into Western and Central Europe, with temperatures in Germany, Poland, and the UK falling between -5°C and -15°C.\n\nA sharp and powerful frontal boundary forms across Southern Europe where the arctic air mass collides with milder air. This front extends from the Black Sea, across the Balkan Peninsula and northern Italy, into southern France. Along this zone, temperatures increase dramatically from sub-zero readings in the north to over 10°C in the south. A low-pressure system, with a central pressure near 1004 hPa, is established in the central Mediterranean Sea, south of Italy.\n\nThe interaction between these features creates active and severe weather. The tight pressure gradient between the northern high and southern low generates strong to gale-force easterly winds, particularly across Central and Eastern Europe. These winds contribute to dangerously low wind chill values. The uplift associated with the Mediterranean low, combined with the influx of cold air, would lead to heavy snowfall, especially across the mountains of Italy and the Balkans. In contrast, North Africa and the far southeastern Mediterranean remain mild, with temperatures between 15°C and 25°C.\n\nIn summary, this chart captures a classic but extreme "Beast from the East" event, a severe winter cold wave driven by an anomalously strong Scandinavian high-pressure system, resulting in widespread record-breaking cold and disruptive weather across Europe.',
+        80,
+    )
+)
+
+# %% [markdown]
+# ## Testing Improved Evaluator Prompt
+
+# %%
+from pathlib import Path
+from textwrap import fill
+
+from dotenv import load_dotenv
+from PIL import Image
+
+from earth_reach.core.evaluator import EvaluatorAgent
+from earth_reach.core.llm import create_llm
+
+load_dotenv(Path().cwd().parent / ".env")
+
+# %%
+figure_id = 13
+images_dir_path = Path().cwd().parent / "data" / "weather_images"
+figure_path = images_dir_path / f"figure_{figure_id}.png"
+img = Image.open(figure_path)
+img
+
+# %%
+llm = create_llm(
+    provider="gemini",
+    model_name="gemini-2.5-pro",
+)
+
+evaluator = EvaluatorAgent(
+    criteria=["fluency"],
+    llm=llm,
+)
+
+# %%
+description = 'This weather chart displays 2-meter temperature and mean sea level pressure over Europe and North Africa for 12:00 UTC on February 27, 2018. The map domain extends from approximately 25°N to 70°N and 10°W to 45°E. Temperatures range from below -30°C (blue/purple) to over 20°C (orange), with green tones near 0°C. Isobars are drawn at 4 hPa intervals.\n\nThe synoptic situation is dominated by an exceptionally intense and large high-pressure system centered over Scandinavia and northwestern Russia. The central pressure of this anticyclone exceeds 1052 hPa. This system governs the weather pattern across the entire continent, representing a significant anomaly for late boreal winter. Its presence establishes a powerful blocking pattern, preventing milder Atlantic air from reaching Europe.\n\nThe primary consequence of this high is a severe cold air outbreak. Inferred from the anticyclonic (clockwise) circulation, strong easterly winds advect frigid continental air from Siberia westward across Europe. This results in extremely low temperatures across a vast area. Scandinavia, the Baltic states, and northern Russia experience temperatures between -15°C and -30°C. The cold air penetrates deep into Western and Central Europe, with temperatures in Germany, Poland, and the UK falling between -5°C and -15°C.\n\nA sharp and powerful frontal boundary forms across Southern Europe where the arctic air mass collides with milder air. This front extends from the Black Sea, across the Balkan Peninsula and northern Italy, into southern France. Along this zone, temperatures increase dramatically from sub-zero readings in the north to over 10°C in the south. A low-pressure system, with a central pressure near 1004 hPa, is established in the central Mediterranean Sea, south of Italy.\n\nThe interaction between these features creates active and severe weather. The tight pressure gradient between the northern high and southern low generates strong to gale-force easterly winds, particularly across Central and Eastern Europe. These winds contribute to dangerously low wind chill values. The uplift associated with the Mediterranean low, combined with the influx of cold air, would lead to heavy snowfall, especially across the mountains of Italy and the Balkans. In contrast, North Africa and the far southeastern Mediterranean remain mild, with temperatures between 15°C and 25°C.\n\nIn summary, this chart captures a classic but extreme "Beast from the East" event, a severe winter cold wave driven by an anomalously strong Scandinavian high-pressure system, resulting in widespread record-breaking cold and disruptive weather across Europe.'
+
+# %%
+output = evaluator.evaluate(
+    description=description,
+    image=img,
+)
+print(output)
+
+# %%
+for eval in output:
+    print(f"Criterion: {eval.name}, Score: {eval.score}")
+    if eval.name == "fluency":
+        print(f"Fluency Feedback:\n\n{fill(eval.reasoning, 80)}")
+
+# %% [markdown]
+# ## Testing Improved Complete System
+
+# %%
+from pathlib import Path
+from textwrap import fill
+
+from dotenv import load_dotenv
+from PIL import Image
+
+from earth_reach.core.evaluator import EvaluatorAgent
+from earth_reach.core.generator import GeneratorAgent
+from earth_reach.core.llm import create_llm
+from earth_reach.core.orchestrator import Orchestrator
+from earth_reach.core.prompts.generator import get_default_generator_user_prompt
+
+load_dotenv(Path().cwd().parent / ".env")
+
+# %%
+figure_id = 13
+images_dir_path = Path().cwd().parent / "data" / "weather_images"
+figure_path = images_dir_path / f"figure_{figure_id}.png"
+img = Image.open(figure_path)
+img
+
+# %%
+llm = create_llm(
+    provider="gemini",
+    model_name="gemini-2.5-pro",
+)
+
+evaluator = EvaluatorAgent(
+    criteria=["coherence", "fluency", "consistency", "relevance"],
+    llm=llm,
+)
+
+generator = GeneratorAgent(
+    llm=llm,
+    user_prompt=get_default_generator_user_prompt(),
+    system_prompt=None,
+)
+
+orchestrator = Orchestrator(
+    generator_agent=generator,
+    evaluator_agent=evaluator,
+)
+
+# %%
+description = orchestrator.run(
+    image=img,
+)
+print(fill(description, 80))
+
+# %%
+print(description.replace("\n", ""))
+
+# %% [markdown]
+# ## Generate Descriptions for All Figures with Improved System
+
+# %%
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+import pandas as pd
+from dotenv import load_dotenv
+from PIL import Image
+from tqdm import tqdm
+
+from earth_reach.core.evaluator import EvaluatorAgent
+from earth_reach.core.generator import GeneratorAgent
+from earth_reach.core.llm import create_llm
+from earth_reach.core.orchestrator import Orchestrator
+from earth_reach.core.prompts.generator import get_default_generator_user_prompt
+
+load_dotenv(Path().cwd().parent / ".env")
+
+# %%
+images_dir_path = Path().cwd().parent / "data" / "weather_images"
+csv_path = images_dir_path / "figure_metadata.csv"
+
+
+def generate_descriptions_to_text(
+    orchestrator,
+    images_dir_path: Path,
+    model_name: str,
+    output_filename: str = "figure_descriptions.txt",
+    delay_seconds: int = 2,
+    delay: bool = True,
+    verbose: bool = False,
+):
+    output_path = images_dir_path / output_filename
+    figure_files = sorted(images_dir_path.glob("figure_*.png"))
+
+    if not figure_files:
+        print("No figure files found!")
+        return
+
+    print(f"Found {len(figure_files)} figures to process")
+
+    for i, image_path in enumerate(tqdm(figure_files, desc="Generating descriptions")):
+        figure_id = image_path.stem.replace("figure_", "")
+
+        try:
+            image = Image.open(image_path)
+
+            start_time = time.time()
+            description = orchestrator.run(image=image)
+            computation_time = time.time() - start_time
+
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            with open(output_path, "a", encoding="utf-8") as f:
+                f.write(f"{'=' * 80}\n")
+                f.write(f"Figure ID: {figure_id}\n")
+                f.write(f"Model: {model_name}\n")
+                f.write(f"Computation Time: {computation_time:.2f} seconds\n")
+                f.write(f"Generated At: {timestamp}\n")
+                f.write(f"{'=' * 80}\n\n")
+                f.write(f"{description}\n\n")
+
+            print(f"✓ Processed {image_path.name} ({computation_time:.2f}s)")
+
+            if verbose:
+                print(f"\nFigure ID: {figure_id}")
+                print(f"Description: {description}\n")
+
+            if delay and i < len(figure_files) - 1:
+                time.sleep(delay_seconds)
+
+        except Exception as e:
+            print(f"✗ Failed {image_path.name}: {str(e)}")
+
+            with open(output_path, "a", encoding="utf-8") as f:
+                f.write(f"{'=' * 80}\n")
+                f.write(f"Figure ID: {figure_id}\n")
+                f.write(f"Model: {model_name}\n")
+                f.write("Computation Time: 0.00 seconds\n")
+                f.write(
+                    f"Generated At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                )
+                f.write(f"{'=' * 80}\n\n")
+                f.write(f"ERROR: Failed to generate description\nReason: {str(e)}\n\n")
+
+    print(f"\n✅ Results saved to: {output_path}")
+
+
+# %%
+llm = create_llm(
+    provider="gemini",
+    model_name="gemini-2.5-pro",
+)
+
+evaluator = EvaluatorAgent(
+    criteria=["coherence", "fluency", "consistency", "relevance"],
+    llm=llm,
+)
+
+generator = GeneratorAgent(
+    llm=llm,
+    user_prompt=get_default_generator_user_prompt(),
+    system_prompt=None,
+)
+
+orchestrator = Orchestrator(
+    generator_agent=generator,
+    evaluator_agent=evaluator,
+)
+
+# %%
+generate_descriptions_to_text(
+    orchestrator=orchestrator,
+    images_dir_path=images_dir_path,
+    output_filename="figure_descriptions.txt",
+    model_name="gemini-2.5-pro",
+    delay_seconds=2,
+    delay=True,
+    verbose=True,
+)

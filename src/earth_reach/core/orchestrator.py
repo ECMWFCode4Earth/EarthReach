@@ -1,14 +1,13 @@
 from typing import List
 
 import earthkit.plots as ekp
+from earth_reach.config.logging import get_logger
+from earth_reach.core.data_extractor import DataExtractorInterface
+from earth_reach.core.evaluator import CriterionEvaluatorOutput, EvaluatorAgent
+from earth_reach.core.generator import GeneratorAgent
+from earth_reach.core.prompts.orchestrator import get_default_feedback_template
 from earthkit.data import FieldList
 from PIL.ImageFile import ImageFile
-
-from earth_reach_agent.config.logging import get_logger
-from earth_reach_agent.core.data_extractor import DataExtractorInterface
-from earth_reach_agent.core.evaluator import CriterionEvaluatorOutput, EvaluatorAgent
-from earth_reach_agent.core.generator import GeneratorAgent
-from earth_reach_agent.core.prompts.orchestrator import get_default_feedback_template
 
 logger = get_logger(__name__)
 
