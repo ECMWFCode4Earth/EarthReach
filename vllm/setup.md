@@ -25,18 +25,18 @@ Start by making sure your server is up to date:
 
 ```sh
 # Search for updates and apply them
-sudo dnf upgrade 
+sudo dnf upgrade
 ```
 
 ### Firewall
 
 Let's allow HTTP, HTTPS connections and deny the other types by default.
 
-TODO(high): update to only accept requests from cloudflare servers for requests other than SSH 
+TODO(high): update to only accept requests from cloudflare servers for requests other than SSH
 
 ```sh
-# Install firewalld 
-sudo dnf install firewalld 
+# Install firewalld
+sudo dnf install firewalld
 
 # Start and enable firewalld
 sudo systemctl start firewalld
@@ -71,7 +71,7 @@ curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-contai
 # Install nvidia container toolkit
 sudo dnf install -y nvidia-container-toolkit
 
-# Configure the nvidia runtime for docker containers 
+# Configure the nvidia runtime for docker containers
 sudo nvidia-ctk runtime configure --runtime=docker
 
 # Restart docker
