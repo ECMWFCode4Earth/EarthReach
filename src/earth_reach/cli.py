@@ -5,11 +5,14 @@ CLI entrypoint for generating weather chart descriptions.
 
 import os
 import sys
+
 from pathlib import Path
-from typing import List
 
 import fire
+
 from dotenv import load_dotenv
+from PIL import Image
+
 from earth_reach.config.criteria import QualityCriteria
 from earth_reach.config.logging import get_logger
 from earth_reach.core.evaluator import EvaluatorAgent
@@ -17,7 +20,6 @@ from earth_reach.core.generator import GeneratorAgent
 from earth_reach.core.llm import create_llm
 from earth_reach.core.orchestrator import Orchestrator
 from earth_reach.core.prompts.generator import get_default_generator_user_prompt
-from PIL import Image
 
 logger = get_logger(__name__)
 
@@ -43,13 +45,13 @@ def load_prompt_from_file(file_path: str) -> str:
         raise FileNotFoundError(f"Prompt file not found: {file_path}")
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read().strip()
             if not content:
                 raise ValueError(f"Prompt file is empty: {file_path}")
             return content
     except Exception as e:
-        raise IOError(f"Failed to read prompt file '{file_path}': {e}")
+        raise OSError(f"Failed to read prompt file '{file_path}': {e}") from e
 
 
 def resolve_prompt(
@@ -73,7 +75,7 @@ def resolve_prompt(
     """
     if direct_prompt is not None and file_path is not None:
         raise ValueError(
-            "Cannot specify both prompt file and prompt text. Please use only one."
+            "Cannot specify both prompt file and prompt text. Please use only one.",
         )
 
     if direct_prompt is not None:
@@ -108,7 +110,7 @@ def resolve_description(
     if description and description_file_path:
         raise ValueError(
             "Cannot provide both description text and description file path. "
-            "Please provide only one."
+            "Please provide only one.",
         )
 
     if description:
@@ -117,19 +119,19 @@ def resolve_description(
     if description_file_path:
         if not os.path.exists(description_file_path):
             raise FileNotFoundError(
-                f"Description file not found: {description_file_path}"
+                f"Description file not found: {description_file_path}",
             )
 
         try:
-            with open(description_file_path, "r", encoding="utf-8") as file:
+            with open(description_file_path, encoding="utf-8") as file:
                 return file.read().strip()
         except Exception as e:
-            raise ValueError(f"Error reading description file: {e}")
+            raise ValueError(f"Error reading description file: {e}") from e
 
     return None
 
 
-def get_valid_criteria() -> List[str]:
+def get_valid_criteria() -> list[str]:
     """
     Get list of valid evaluation criteria.
 
@@ -165,7 +167,7 @@ def validate_image_path(image_path: str) -> Path:
     if path.suffix not in valid_extensions:
         raise ValueError(
             f"Unsupported image format: {path.suffix}. "
-            f"Supported formats: {', '.join(sorted(valid_extensions))}"
+            f"Supported formats: {', '.join(sorted(valid_extensions))}",
         )
 
     return path
@@ -226,22 +228,24 @@ class CLI:
                 None,
             )
             user_prompt_text = resolve_prompt(
-                user_prompt, user_prompt_file_path, get_default_generator_user_prompt()
+                user_prompt,
+                user_prompt_file_path,
+                get_default_generator_user_prompt(),
             )
             if not user_prompt_text:
                 raise ValueError(
-                    "User prompt cannot be empty. Please provide a valid prompt."
+                    "User prompt cannot be empty. Please provide a valid prompt.",
                 )
 
             if verbose:
                 if system_prompt_text:
                     logger.info(
-                        f"System prompt length: {len(system_prompt_text)} characters"
+                        f"System prompt length: {len(system_prompt_text)} characters",
                     )
 
                 if user_prompt_text:
                     logger.info(
-                        f"User prompt length: {len(user_prompt_text)} characters"
+                        f"User prompt length: {len(user_prompt_text)} characters",
                     )
 
             if verbose:
@@ -252,7 +256,9 @@ class CLI:
                 logger.info("Creating generator agent...")
 
             generator = GeneratorAgent(
-                llm=llm, system_prompt=system_prompt_text, user_prompt=user_prompt_text
+                llm=llm,
+                system_prompt=system_prompt_text,
+                user_prompt=user_prompt_text,
             )
 
             if not simple:
@@ -279,7 +285,8 @@ class CLI:
 
             if simple:
                 description = generator.generate(
-                    image=image, return_intermediate_steps=False
+                    image=image,
+                    return_intermediate_steps=False,
                 )
             else:
                 description = orchestrator.run(image=image)
@@ -291,9 +298,9 @@ class CLI:
 
             print(description)
 
-            return None
+            return
 
-        except (FileNotFoundError, ValueError, IOError) as e:
+        except (OSError, FileNotFoundError, ValueError) as e:
             logger.error(f"Could not load image file: {e}", exc_info=True)
             sys.exit(1)
         except RuntimeError as e:
@@ -308,7 +315,7 @@ class CLI:
         image_path: str,
         description: str | None = None,
         description_file_path: str | None = None,
-        criteria: List[str] = ["coherence", "fluency", "consistency", "relevance"],
+        criteria: list[str] | None = None,
         verbose: bool = False,
     ) -> None:
         """
@@ -329,6 +336,9 @@ class CLI:
             ValueError: If arguments are invalid or conflicting
             RuntimeError: If evaluation fails
         """
+        if criteria is None:
+            criteria = ["coherence", "fluency", "consistency", "relevance"]
+
         try:
             if verbose:
                 logger.info(f"Validating image: {image_path}")
@@ -345,7 +355,7 @@ class CLI:
             )
             if not description_text or description_text.strip() == "":
                 raise ValueError(
-                    "Description cannot be empty. Please provide a valid description."
+                    "Description cannot be empty. Please provide a valid description.",
                 )
 
             if verbose:
@@ -358,7 +368,7 @@ class CLI:
             invalid_criteria = [c for c in criteria if c not in valid_criteria]
             if invalid_criteria:
                 raise ValueError(
-                    f"Invalid criteria: {invalid_criteria}. Valid criteria are: {valid_criteria}"
+                    f"Invalid criteria: {invalid_criteria}. Valid criteria are: {valid_criteria}",
                 )
 
             if verbose:
@@ -394,7 +404,7 @@ class CLI:
                     print(f"Reasoning: {eval.reasoning}")
                 print("-" * 50)
 
-            return None
+            return
 
         except FileNotFoundError as e:
             logger.error(f"File not found: {e}", exc_info=True)

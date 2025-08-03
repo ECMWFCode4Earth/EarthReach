@@ -25,13 +25,14 @@ import base64
 import os
 import time
 import warnings
+
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List
 
 import earthkit as ek
 import openai
 import pandas as pd
+
 from dotenv import load_dotenv
 from earthkit.data import cache, config
 from IPython.display import Markdown, display
@@ -57,8 +58,8 @@ print("cache:", cache.directory())
 # %%
 def get_weather_data(
     date: str,
-    times: List[str] = ["12:00"],
-    variables: List[str] = ["2m_temperature", "mean_sea_level_pressure"],
+    times: list[str] = ["12:00"],
+    variables: list[str] = ["2m_temperature", "mean_sea_level_pressure"],
     dataset: str = "reanalysis-era5-single-levels",
 ):
     date_list = date.split("/")
@@ -145,7 +146,7 @@ def call_llm_api(user_prompt: str, image) -> str:
                             },
                         },
                     ],
-                }
+                },
             ],
         )
         description = response.choices[0].message.content
@@ -213,7 +214,7 @@ def save_weather_event_images(weather_events, output_dir="weather_images"):
 
                     sub_data = data.sel(param=["2t", "msl"], typeOfLevel="surface")
 
-                    kwargs: Dict[str, List] = (
+                    kwargs: dict[str, list] = (
                         {"domain": [domain_type]}
                         if domain_type.lower() != "global"
                         else {}
@@ -240,7 +241,7 @@ def save_weather_event_images(weather_events, output_dir="weather_images"):
                             "event_type": event_type,
                             "domain_type": domain_type,
                             "date": date_str,
-                        }
+                        },
                     )
 
                     figure_id += 1
@@ -306,7 +307,7 @@ f.show()
 # %%
 sub_data = data.sel(param=["2t", "msl", "10u", "10v"], typeOfLevel="surface")
 
-kwargs: Dict[str, List] = (
+kwargs: dict[str, list] = (
     {"domain": [domain_type]} if domain_type.lower() != "global" else {}
 )
 
@@ -403,22 +404,22 @@ figure.title()  # TODO: extract the string title
 # %%
 task_prompt = """# Instructions for Describing Meteorological Visualizations for Blind Scientists
 
-Your task is to create a comprehensive, scientifically accurate description of meteorological visualizations that will be accessible to blind scientists. 
+Your task is to create a comprehensive, scientifically accurate description of meteorological visualizations that will be accessible to blind scientists.
 
 """
 
 method_prompt = """## Method
 
-To achieve this task, you will work in two three steps. 
+To achieve this task, you will work in two three steps.
 1. Understanding the information of the visualization
 2. Planning your description
 3. Writing your description
 
 First,reflect on the meteorological visualizations and the metadata provided, step by step, critically, and without omitting any detail, to make sure you understand them and the key information they convey.
 
-Once you've completed your full breakdown of the visualization and the metadata, you should be able to write a comprehensive, scientifically accurate description of the visualization. 
+Once you've completed your full breakdown of the visualization and the metadata, you should be able to write a comprehensive, scientifically accurate description of the visualization.
 
-So you will once again start a reflection process, to plan what you will convey and how you will convey it in the desciption, in order to respect the requirements established previously 
+So you will once again start a reflection process, to plan what you will convey and how you will convey it in the desciption, in order to respect the requirements established previously
 
 """
 
@@ -569,11 +570,11 @@ You are a specialist scientific communication assistant working with meteorologi
 ### Length and Structure Requirements
 - **Total description length**: 300-500 words maximum
 - **Overview section**: Exactly 2-3 sentences
-- **Main body**: 4-6 sentences 
+- **Main body**: 4-6 sentences
 
 ### Quantitative Requirements
 - **Include exact ranges**: Every variable must have minimum and maximum values with units
-- **Spatial precision**: Use cardinal directions and geographic references 
+- **Spatial precision**: Use cardinal directions and geographic references
 - **Coordinate references**: Include latitude/longitude for major features (±2 degrees acceptable)
 - **Unit consistency**: Use standard meteorological units (hPa, m/s, K or °C, km)
 
@@ -612,7 +613,7 @@ Not yet available, but will be provided in the future.
 
 **Required XML Tags:**
 - `<step_1>...</step_1>` - Wrap the entire content of Step 1 (excluding the markdown header)
-- `<step_2>...</step_2>` - Wrap the entire content of Step 2 (excluding the markdown header)  
+- `<step_2>...</step_2>` - Wrap the entire content of Step 2 (excluding the markdown header)
 - `<step_3>...</step_3>` - Wrap the entire content of Step 3 (excluding the markdown header)
 - `<step_4>...</step_4>` - Wrap the entire content of Step 4 (excluding the markdown header)
 - `<final_description>...</final_description>` - Wrap only the final consolidated description (without headers or meta-commentary)
@@ -631,7 +632,7 @@ The chart displays 2-meter temperature and mean sea level pressure...
 [rest of step 1 content]
 </step_1>
 
-## Step 2: Pattern Recognition and Spatial Analysis  
+## Step 2: Pattern Recognition and Spatial Analysis
 <step_2>
 The dominant feature is a high-pressure system...
 [rest of step 2 content]
@@ -640,14 +641,14 @@ The dominant feature is a high-pressure system...
 ## Step 3: Description Planning and Structure Design
 <step_3>
 To structure the description, we will start with an overview...
-[rest of step 3 content]  
+[rest of step 3 content]
 </step_3>
 
 ## Step 4: Description Writing with Verification
 <step_4>
 ### Overview
 This weather chart displays...
-### Main Body  
+### Main Body
 A high-pressure system is centered...
 [rest of step 4 content]
 </step_4>
@@ -710,7 +711,7 @@ for idx, row in tqdm(df.iterrows(), desc="Generating descriptions"):
                 print(f"✓ Generated description for figure_{figure_id}")
 
             except Exception as e:
-                df.at[idx, "description"] = f"FAILED: {str(e)}"
+                df.at[idx, "description"] = f"FAILED: {e!s}"
                 print(f"✗ Failed figure_{figure_id}: {e}")
 
             processed_count += 1
@@ -752,7 +753,7 @@ def show_image_with_description(image_path: Path, description: str):
         try:
             image = Image.open(image_path)
             print(
-                fill(description, width=80)
+                fill(description, width=80),
             )  # Format description for better readability
             return image
         except Exception as e:
@@ -812,7 +813,7 @@ print(
     fill(
         'This weather chart displays 2-meter temperature and mean sea level pressure over Europe and North Africa for 12:00 UTC on February 27, 2018. The map domain extends from approximately 25°N to 70°N and 10°W to 45°E. Temperatures range from below -30°C (blue/purple) to over 20°C (orange), with green tones near 0°C. Isobars are drawn at 4 hPa intervals.\n\nThe synoptic situation is dominated by an exceptionally intense and large high-pressure system centered over Scandinavia and northwestern Russia. The central pressure of this anticyclone exceeds 1052 hPa. This system governs the weather pattern across the entire continent, representing a significant anomaly for late boreal winter. Its presence establishes a powerful blocking pattern, preventing milder Atlantic air from reaching Europe.\n\nThe primary consequence of this high is a severe cold air outbreak. Inferred from the anticyclonic (clockwise) circulation, strong easterly winds advect frigid continental air from Siberia westward across Europe. This results in extremely low temperatures across a vast area. Scandinavia, the Baltic states, and northern Russia experience temperatures between -15°C and -30°C. The cold air penetrates deep into Western and Central Europe, with temperatures in Germany, Poland, and the UK falling between -5°C and -15°C.\n\nA sharp and powerful frontal boundary forms across Southern Europe where the arctic air mass collides with milder air. This front extends from the Black Sea, across the Balkan Peninsula and northern Italy, into southern France. Along this zone, temperatures increase dramatically from sub-zero readings in the north to over 10°C in the south. A low-pressure system, with a central pressure near 1004 hPa, is established in the central Mediterranean Sea, south of Italy.\n\nThe interaction between these features creates active and severe weather. The tight pressure gradient between the northern high and southern low generates strong to gale-force easterly winds, particularly across Central and Eastern Europe. These winds contribute to dangerously low wind chill values. The uplift associated with the Mediterranean low, combined with the influx of cold air, would lead to heavy snowfall, especially across the mountains of Italy and the Balkans. In contrast, North Africa and the far southeastern Mediterranean remain mild, with temperatures between 15°C and 25°C.\n\nIn summary, this chart captures a classic but extreme "Beast from the East" event, a severe winter cold wave driven by an anomalously strong Scandinavian high-pressure system, resulting in widespread record-breaking cold and disruptive weather across Europe.',
         80,
-    )
+    ),
 )
 
 # %% [markdown]
@@ -925,11 +926,12 @@ print(description.replace("\n", ""))
 
 # %%
 import time
+
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
+
 from dotenv import load_dotenv
 from PIL import Image
 from tqdm import tqdm
@@ -996,7 +998,7 @@ def generate_descriptions_to_text(
                 time.sleep(delay_seconds)
 
         except Exception as e:
-            print(f"✗ Failed {image_path.name}: {str(e)}")
+            print(f"✗ Failed {image_path.name}: {e!s}")
 
             with open(output_path, "a", encoding="utf-8") as f:
                 f.write(f"{'=' * 80}\n")
@@ -1004,10 +1006,10 @@ def generate_descriptions_to_text(
                 f.write(f"Model: {model_name}\n")
                 f.write("Computation Time: 0.00 seconds\n")
                 f.write(
-                    f"Generated At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"Generated At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
                 )
                 f.write(f"{'=' * 80}\n\n")
-                f.write(f"ERROR: Failed to generate description\nReason: {str(e)}\n\n")
+                f.write(f"ERROR: Failed to generate description\nReason: {e!s}\n\n")
 
     print(f"\n✅ Results saved to: {output_path}")
 

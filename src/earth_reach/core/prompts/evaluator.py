@@ -10,7 +10,7 @@ You are a scientific communication specialist evaluating weather chart descripti
 
 **Core Definition**: Coherence measures whether information flows logically from broadest relevant context → intermediate patterns → finest relevant details, enabling systematic meteorological analysis without visual reference.
 
-**Scale-Appropriate Hierarchy Principle**: 
+**Scale-Appropriate Hierarchy Principle**:
 - **Global charts**: Global circulation → continental patterns → regional systems
 - **Regional charts**: Synoptic context → regional systems → local weather
 - **Local charts**: Regional context → local systems → specific phenomena
@@ -28,7 +28,7 @@ You are a scientific communication specialist evaluating weather chart descripti
 **Objective**: Evaluate whether the structural organization enables systematic meteorological analysis
 
 **How to Assess Information Architecture**:
-1. **Context Completeness Check**: Verify essential meteorological context appears early 
+1. **Context Completeness Check**: Verify essential meteorological context appears early
 2. **Scale-Appropriate Hierarchy**: Confirm the progression matches the chart's domain (no forced global discussion for regional charts)
 3. **Analytical Building Assessment**: Each section should build upon previous information rather than presenting isolated facts
 4. **Priority Sequence Logic**: Most meteorologically significant features should be introduced before secondary patterns
@@ -110,7 +110,7 @@ You are a scientific communication specialist evaluating weather chart descripti
 
 **Score 2 - Poor Coherence**
 - Inappropriate scale forcing or significant hierarchy problems
-- Weak analytical progression with frequent gaps between observations and interpretations  
+- Weak analytical progression with frequent gaps between observations and interpretations
 - Poor multi-scale integration with abrupt transitions or missing connections
 - Accessibility compromised by inconsistent references and unclear spatial logic
 - Structure creates barriers to systematic meteorological analysis
@@ -133,7 +133,7 @@ You are a scientific communication specialist evaluating weather chart descripti
 
 **Pass-Fail Thresholds** (Automatic scoring guidance):
 - **Missing essential context** (domain, variables, ranges, intervals): Maximum score 2
-- **Inappropriate scale forcing** (global discussion for regional charts): Maximum score 2  
+- **Inappropriate scale forcing** (global discussion for regional charts): Maximum score 2
 - **No multi-scale connections**: Maximum score 3
 - **Poor accessibility optimization** (inconsistent references, unclear spatial logic): Maximum score 3
 
@@ -472,7 +472,7 @@ You are a meteorological data validation specialist evaluating weather chart des
 ## COMMON PITFALLS TO AVOID
 
 1. **Spatial Accuracy Tolerance**: ZERO tolerance for >2° pressure center errors - these make descriptions actively misleading
-2. **Theoretical Complexity Confusion**: Don't excuse clear seasonal/circulation violations as "atmospheric complexity" 
+2. **Theoretical Complexity Confusion**: Don't excuse clear seasonal/circulation violations as "atmospheric complexity"
 3. **Chart Resolution Expectations**: Don't demand precision beyond chart capabilities, but verify claimed precision is achievable
 4. **Multi-Scale Logic**: Ensure local descriptions are consistent with regional and broader patterns mentioned
 5. **Domain Coverage Standards**: Verify complete coverage matches chart extent - no artificial truncations acceptable
@@ -677,13 +677,12 @@ def get_default_criterion_evaluator_user_prompt(criterion: str) -> str:
     """
     if criterion == "coherence":
         return DEFAULT_COHERENCE_CRITERIA_EVALUATOR_USER_PROMPT
-    elif criterion == "fluency":
+    if criterion == "fluency":
         return DEFAULT_FLUENCY_CRITERIA_EVALUATOR_USER_PROMPT
-    elif criterion == "consistency":
+    if criterion == "consistency":
         return DEFAULT_CONSISTENCY_CRITERIA_EVALUATOR_USER_PROMPT
-    elif criterion == "relevance":
+    if criterion == "relevance":
         return DEFAULT_RELEVANCE_CRITERIA_EVALUATOR_USER_PROMPT
-    else:
-        raise ValueError(
-            f"Unknown criterion: {criterion}. Valid options are: coherence, fluency, consistency, relevance."
-        )
+    raise ValueError(
+        f"Unknown criterion: {criterion}. Valid options are: coherence, fluency, consistency, relevance.",
+    )

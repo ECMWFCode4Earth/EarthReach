@@ -1,17 +1,20 @@
 import re
+
 from dataclasses import MISSING, dataclass, fields
 from io import BytesIO
-from typing import Any, List, Union, get_args, get_origin
+from typing import Any, Union, get_args, get_origin
 
 import earthkit.plots as ekp
+
+from PIL import Image
+from PIL.ImageFile import ImageFile
+
 from earth_reach.config.logging import get_logger
 from earth_reach.core.generator import FigureMetadata
 from earth_reach.core.llm import LLMInterface, create_llm
 from earth_reach.core.prompts.evaluator import (
     get_default_criterion_evaluator_user_prompt,
 )
-from PIL import Image
-from PIL.ImageFile import ImageFile
 
 logger = get_logger(__name__)
 
@@ -70,18 +73,19 @@ class CriterionEvaluator:
     ) -> CriterionEvaluatorOutput:
         if figure is not None and image is not None:
             raise ValueError(
-                "Only one of 'figure' or 'image' can be provided, not both."
+                "Only one of 'figure' or 'image' can be provided, not both.",
             )
         if figure is not None:
             # TODO(medium): If metadata extraction fails, continue without it
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
-                self.user_prompt, metadata
+                self.user_prompt,
+                metadata,
             )
             image = self._get_image_from_figure(figure)
         elif image is None and figure is None:
             raise ValueError(
-                "Either 'figure' or 'image' must be provided to generate a description."
+                "Either 'figure' or 'image' must be provided to generate a description.",
             )
         try:
             user_prompt = (
@@ -131,14 +135,16 @@ class CriterionEvaluator:
                     content = match.group(1).strip()
                     if content:
                         converted_value = self.convert_to_field_type(
-                            content, field_name, field_type
+                            content,
+                            field_name,
+                            field_type,
                         )
                         extracted_values[field_name] = converted_value
             except Exception as e:
-                parsing_errors.append(f"Failed to parse field '{field_name}': {str(e)}")
+                parsing_errors.append(f"Failed to parse field '{field_name}': {e!s}")
 
         logger.warning(
-            f"Parsing errors encountered: {parsing_errors}"
+            f"Parsing errors encountered: {parsing_errors}",
         ) if parsing_errors else None
 
         required_fields = [
@@ -153,18 +159,21 @@ class CriterionEvaluator:
         missing_required = [f for f in required_fields if f not in extracted_values]
         if missing_required:
             raise ValueError(
-                f"Missing required fields in XML response: {missing_required}"
+                f"Missing required fields in XML response: {missing_required}",
             )
 
         try:
             return CriterionEvaluatorOutput(name=self.criterion, **extracted_values)
         except Exception as e:
             raise Exception(
-                f"Failed to create CriterionEvaluatorOutput instance: {str(e)}"
-            )
+                f"Failed to create CriterionEvaluatorOutput instance: {e!s}",
+            ) from e
 
     def convert_to_field_type(
-        self, content: str, field_name: str, field_type: Any
+        self,
+        content: str,
+        field_name: str,
+        field_type: Any,
     ) -> Any:
         """
         Convert string content to the appropriate type based on field type annotation.
@@ -193,36 +202,35 @@ class CriterionEvaluator:
         if field_type is int:
             try:
                 return int(content)
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
-                    f"Cannot convert '{content}' to integer for field '{field_name}'"
-                )
+                    f"Cannot convert '{content}' to integer for field '{field_name}'",
+                ) from e
 
         elif field_type is float:
             try:
                 return float(content)
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
-                    f"Cannot convert '{content}' to float for field '{field_name}'"
-                )
+                    f"Cannot convert '{content}' to float for field '{field_name}'",
+                ) from e
 
         elif field_type is bool:
             lower_content = content.lower().strip()
             if lower_content in ("true", "1", "yes", "on", "y"):
                 return True
-            elif lower_content in ("false", "0", "no", "off", "n"):
+            if lower_content in ("false", "0", "no", "off", "n"):
                 return False
-            else:
-                raise ValueError(
-                    f"Cannot convert '{content}' to boolean for field '{field_name}'. "
-                    f"Expected: true/false, 1/0, yes/no, on/off, y/n"
-                )
+            raise ValueError(
+                f"Cannot convert '{content}' to boolean for field '{field_name}'. "
+                f"Expected: true/false, 1/0, yes/no, on/off, y/n",
+            )
 
         elif field_type is str:
             return content
 
         else:
-            if hasattr(field_type, "__call__"):
+            if callable(field_type):
                 try:
                     return field_type(content)
                 except Exception:
@@ -255,7 +263,9 @@ class CriterionEvaluator:
         return metadata
 
     def _update_user_prompt_with_metadata(
-        self, user_prompt: str, metadata: FigureMetadata
+        self,
+        user_prompt: str,
+        metadata: FigureMetadata,
     ) -> str:
         """
         Update the user prompt with metadata extracted from the figure.
@@ -272,7 +282,8 @@ class CriterionEvaluator:
             value = getattr(metadata, field_info.name)
             if value is not None:
                 description = field_info.metadata.get(
-                    "description", "No description available"
+                    "description",
+                    "No description available",
                 )
                 metadata_items.append(f"- {field_info.name} ({description}): {value}")
 
@@ -325,14 +336,17 @@ class CriterionEvaluatorFactory:
         user_prompt = get_default_criterion_evaluator_user_prompt(criterion)
 
         return CriterionEvaluator(
-            criterion=criterion, llm=llm, system_prompt=None, user_prompt=user_prompt
+            criterion=criterion,
+            llm=llm,
+            system_prompt=None,
+            user_prompt=user_prompt,
         )
 
 
 class EvaluatorAgent:
     """Agent class for evaluating the quality of weather chart descriptions."""
 
-    def __init__(self, criteria: List[str], llm: LLMInterface | None = None) -> None:
+    def __init__(self, criteria: list[str], llm: LLMInterface | None = None) -> None:
         """
         Initialize the EvaluatorAgent.
 
@@ -358,7 +372,7 @@ class EvaluatorAgent:
             ]
         except Exception as e:
             raise RuntimeError(
-                f"Failed to create evaluators for criteria {criteria}: {e}"
+                f"Failed to create evaluators for criteria {criteria}: {e}",
             ) from e
 
     def evaluate(
@@ -366,7 +380,7 @@ class EvaluatorAgent:
         description: str,
         figure: ekp.Figure | None = None,
         image: ImageFile | None = None,
-    ) -> List[CriterionEvaluatorOutput]:
+    ) -> list[CriterionEvaluatorOutput]:
         """
         Evaluate the given text against the specified criteria.
 
@@ -378,14 +392,16 @@ class EvaluatorAgent:
         """
         if figure is not None and image is not None:
             raise ValueError(
-                "Only one of 'figure' or 'image' can be provided, not both."
+                "Only one of 'figure' or 'image' can be provided, not both.",
             )
 
         try:
             evaluations = []
             for evaluator in self.evaluators:
                 result = evaluator.evaluate(
-                    description=description, figure=figure, image=image
+                    description=description,
+                    figure=figure,
+                    image=image,
                 )
                 evaluations.append(result)
 

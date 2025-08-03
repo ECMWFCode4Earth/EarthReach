@@ -4,10 +4,9 @@ Centralized logging configuration.
 
 import logging
 import os
-from typing import Optional
 
 
-def setup_logging(level: Optional[str] = None) -> None:
+def setup_logging(level: str | None = None) -> None:
     """
     Configure logging for the application.
 

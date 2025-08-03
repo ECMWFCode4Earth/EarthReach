@@ -1,13 +1,13 @@
-from typing import List
-
 import earthkit.plots as ekp
+
+from earthkit.data import FieldList
+from PIL.ImageFile import ImageFile
+
 from earth_reach.config.logging import get_logger
 from earth_reach.core.data_extractor import DataExtractorInterface
 from earth_reach.core.evaluator import CriterionEvaluatorOutput, EvaluatorAgent
 from earth_reach.core.generator import GeneratorAgent
 from earth_reach.core.prompts.orchestrator import get_default_feedback_template
-from earthkit.data import FieldList
-from PIL.ImageFile import ImageFile
 
 logger = get_logger(__name__)
 
@@ -19,7 +19,7 @@ class Orchestrator:
         self,
         generator_agent: GeneratorAgent,
         evaluator_agent: EvaluatorAgent,
-        data_extractors: List[DataExtractorInterface] = [],
+        data_extractors: list[DataExtractorInterface] | None = None,
         max_iterations: int = 3,
         criteria_threshold: int = 4,
         feedback_template: str | None = None,
@@ -37,7 +37,7 @@ class Orchestrator:
         """
         self.generator_agent = generator_agent
         self.evaluator_agent = evaluator_agent
-        self.data_extractors = data_extractors
+        self.data_extractors = data_extractors if data_extractors is not None else []
         self.max_iterations = max_iterations
         self.criteria_threshold = criteria_threshold
         self.feedback_template = feedback_template or get_default_feedback_template()
@@ -67,7 +67,7 @@ class Orchestrator:
         """
         if figure is not None and image is not None:
             raise ValueError(
-                "Only one of 'figure' or 'image' can be provided, not both."
+                "Only one of 'figure' or 'image' can be provided, not both.",
             )
 
         # TODO(high): to integrate with the list of data extractors, verify that pressure and temperature fields are present
@@ -78,18 +78,22 @@ class Orchestrator:
         try:
             for i in range(self.max_iterations):
                 description = self.generator_agent.generate(
-                    figure=figure, image=image, return_intermediate_steps=False
+                    figure=figure,
+                    image=image,
+                    return_intermediate_steps=False,
                 )
                 if not isinstance(description, str):
                     raise TypeError(
-                        f"Expected description to be a string, got {type(description)}"
+                        f"Expected description to be a string, got {type(description)}",
                     )
 
                 if not description:
                     raise ValueError("Generated description is empty.")
 
                 evaluation = self.evaluator_agent.evaluate(
-                    description, image=image, figure=figure
+                    description,
+                    image=image,
+                    figure=figure,
                 )
 
                 if self.verify_evaluation_passes(evaluation):
@@ -98,19 +102,19 @@ class Orchestrator:
                 self.provide_feedback_to_generator(i + 1, description, evaluation)
 
             logger.warning(
-                f"Maximum iterations ({self.max_iterations}) reached without passing evaluation. Acknowledging limits of description."
+                f"Maximum iterations ({self.max_iterations}) reached without passing evaluation. Acknowledging limits of description.",
             )
 
-            description = self.acknowledge_limits_of_description(
-                description, evaluation
+            return self.acknowledge_limits_of_description(
+                description,
+                evaluation,
             )
-
-            return description
         except Exception as e:
             raise RuntimeError("Failed to generate a description") from e
 
     def verify_evaluation_passes(
-        self, evaluation: List[CriterionEvaluatorOutput]
+        self,
+        evaluation: list[CriterionEvaluatorOutput],
     ) -> bool:
         """
         Verify if the evaluation passes the quality criteria.
@@ -129,7 +133,7 @@ class Orchestrator:
         self,
         evaluation_id: int,
         description: str,
-        evaluation: List[CriterionEvaluatorOutput],
+        evaluation: list[CriterionEvaluatorOutput],
     ) -> None:
         """
         Provide feedback to the GeneratorAgent based on evaluation results.
@@ -163,7 +167,9 @@ class Orchestrator:
         self.generator_agent.append_user_prompt(feedback)
 
     def acknowledge_limits_of_description(
-        self, description: str, evaluation: List[CriterionEvaluatorOutput]
+        self,
+        description: str,
+        evaluation: list[CriterionEvaluatorOutput],
     ) -> str:
         """
         Acknowledge the limits of the generated description based on evaluation results.

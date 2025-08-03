@@ -1,10 +1,13 @@
 import os
+
 from abc import ABC, abstractmethod
 
 import openai
-from earth_reach.core.utils import img_to_base64, img_to_bytes
+
 from google import genai
 from google.genai import types
+
+from earth_reach.core.utils import img_to_base64, img_to_bytes
 
 
 class LLMInterface(ABC):
@@ -12,7 +15,10 @@ class LLMInterface(ABC):
 
     @abstractmethod
     def generate(
-        self, user_prompt: str, system_prompt: str | None = None, image=None
+        self,
+        user_prompt: str,
+        system_prompt: str | None = None,
+        image=None,
     ) -> str:
         """
         Generate a response from the LLM based on the user prompt and optional system prompt.
@@ -29,7 +35,6 @@ class LLMInterface(ABC):
             ValueError: If user_prompt is empty/None or if the API response is empty.
             RuntimeError: For other run-time errors.
         """
-        pass
 
 
 class OpenAICompatibleLLM(LLMInterface):
@@ -60,7 +65,10 @@ class OpenAICompatibleLLM(LLMInterface):
         )
 
     def generate(
-        self, user_prompt: str, system_prompt: str | None = None, image=None
+        self,
+        user_prompt: str,
+        system_prompt: str | None = None,
+        image=None,
     ) -> str:
         """
         Generate a response from the LLM API based on the user prompt and optional system prompt.
@@ -107,7 +115,7 @@ class OpenAICompatibleLLM(LLMInterface):
             messages.append({"role": "user", "content": user_content})
 
         except Exception as e:
-            raise ValueError(f"Failed to process input data: {e}")
+            raise ValueError(f"Failed to process input data: {e}") from e
 
         try:
             response = self.client.chat.completions.create(
@@ -152,7 +160,7 @@ class GroqLLM(OpenAICompatibleLLM):
             api_key = os.environ.get("GROQ_API_KEY", None)
             if not api_key:
                 raise AssertionError(
-                    "GROQ_API_KEY not set. Please set it in your environment variables, or pass it as an argument."
+                    "GROQ_API_KEY not set. Please set it in your environment variables, or pass it as an argument.",
                 )
 
         super().__init__(
@@ -182,11 +190,13 @@ class OpenAILLM(OpenAICompatibleLLM):
             api_key = os.environ.get("OPENAI_API_KEY", None)
             if not api_key:
                 raise AssertionError(
-                    "OPENAI_API_KEY not set. Please set it in your environment variables, or pass it as an argument."
+                    "OPENAI_API_KEY not set. Please set it in your environment variables, or pass it as an argument.",
                 )
 
         super().__init__(
-            model_name=model_name, api_key=api_key, base_url="https://api.openai.com/v1"
+            model_name=model_name,
+            api_key=api_key,
+            base_url="https://api.openai.com/v1",
         )
 
 
@@ -208,7 +218,7 @@ class GeminiLLM(LLMInterface):
             api_key = os.environ.get("GEMINI_API_KEY", None)
             if not api_key:
                 raise AssertionError(
-                    "GEMINI_API_KEY not set. Please set it in your environment variables, or pass it as an argument."
+                    "GEMINI_API_KEY not set. Please set it in your environment variables, or pass it as an argument.",
                 )
 
         self.model_name = model_name
@@ -216,7 +226,10 @@ class GeminiLLM(LLMInterface):
         self.client = genai.Client(api_key=api_key)
 
     def generate(
-        self, user_prompt: str, system_prompt: str | None = None, image=None
+        self,
+        user_prompt: str,
+        system_prompt: str | None = None,
+        image=None,
     ) -> str:
         """
         Generate a response from the Gemini API based on the user prompt and optional system prompt.
@@ -252,12 +265,12 @@ class GeminiLLM(LLMInterface):
                     types.Part.from_bytes(
                         data=image_bytes,
                         mime_type="image/png",
-                    )
+                    ),
                 )
             contents.append(full_prompt)
 
         except Exception as e:
-            raise ValueError(f"Failed to process input data: {e}")
+            raise ValueError(f"Failed to process input data: {e}") from e
 
         try:
             response = self.client.models.generate_content(
@@ -305,7 +318,7 @@ def create_llm(provider="groq", model_name: str | None = None) -> LLMInterface:
             model_name = "meta-llama/llama-4-maverick-17b-128e-instruct"
         return GroqLLM(model_name=model_name, api_key=api_key)
 
-    elif provider.lower() == "openai":
+    if provider.lower() == "openai":
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is not set.")
@@ -313,7 +326,7 @@ def create_llm(provider="groq", model_name: str | None = None) -> LLMInterface:
             model_name = "o4-mini-2025-04-16"
         return OpenAILLM(model_name=model_name, api_key=api_key)
 
-    elif provider.lower() == "gemini":
+    if provider.lower() == "gemini":
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable is not set.")
@@ -323,5 +336,5 @@ def create_llm(provider="groq", model_name: str | None = None) -> LLMInterface:
         return GeminiLLM(model_name=model_name, api_key=api_key)
 
     raise ValueError(
-        f"Unsupported LLM provider: {provider}. Supported providers: 'groq', 'openai', 'gemini'."
+        f"Unsupported LLM provider: {provider}. Supported providers: 'groq', 'openai', 'gemini'.",
     )

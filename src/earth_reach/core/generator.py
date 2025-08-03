@@ -1,12 +1,14 @@
 import re
+
 from dataclasses import dataclass, field, fields
 from io import BytesIO
-from typing import List
 
 import earthkit.plots as ekp
-from earth_reach.core.llm import LLMInterface
+
 from PIL import Image
 from PIL.ImageFile import ImageFile
+
+from earth_reach.core.llm import LLMInterface
 
 
 @dataclass
@@ -14,7 +16,8 @@ class FigureMetadata:
     """Metadata extracted from a figure."""
 
     title: str | None = field(
-        default=None, metadata={"description": "Figure title or heading"}
+        default=None,
+        metadata={"description": "Figure title or heading"},
     )
     xlabel: str | None = field(
         default=None,
@@ -25,9 +28,10 @@ class FigureMetadata:
         metadata={"description": "Y-axis label describing the vertical dimension"},
     )
     domain: str | None = field(
-        default=None, metadata={"description": "Geographic domain of the figure"}
+        default=None,
+        metadata={"description": "Geographic domain of the figure"},
     )
-    variables: List[str] | None = field(
+    variables: list[str] | None = field(
         default=None,
         metadata={"description": "Key variables shown in the figure"},
     )
@@ -65,7 +69,7 @@ class GeneratorOutput:
             for field in fields(self)
         )
 
-    def get_missing_fields(self) -> List[str]:
+    def get_missing_fields(self) -> list[str]:
         """
         Return list of field names that were not successfully parsed.
 
@@ -109,7 +113,10 @@ class GeneratorAgent:
     """GeneratorAgent class for generating weather charts scientific descriptions."""
 
     def __init__(
-        self, llm: LLMInterface, system_prompt: str | None, user_prompt: str
+        self,
+        llm: LLMInterface,
+        system_prompt: str | None,
+        user_prompt: str,
     ) -> None:
         """
         Initialize the GeneratorAgent with a LLMInterface instance and prompts.
@@ -147,18 +154,19 @@ class GeneratorAgent:
         """
         if figure is not None and image is not None:
             raise ValueError(
-                "Only one of 'figure' or 'image' can be provided, not both."
+                "Only one of 'figure' or 'image' can be provided, not both.",
             )
         if figure is not None:
             # TODO(medium): If metadata extraction fails at any point, generate image and continue without figure metadata
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
-                self.user_prompt, metadata
+                self.user_prompt,
+                metadata,
             )
             image = self._get_image_from_figure(figure)
         elif image is None and figure is None:
             raise ValueError(
-                "Either 'figure' or 'image' must be provided to generate a description."
+                "Either 'figure' or 'image' must be provided to generate a description.",
             )
 
         try:
@@ -172,7 +180,7 @@ class GeneratorAgent:
             if not parsed_output.is_complete():
                 raise ValueError(
                     "Parsed output is incomplete. Missing fields: "
-                    f"{parsed_output.get_missing_fields()}"
+                    f"{parsed_output.get_missing_fields()}",
                 )
 
             if return_intermediate_steps:
@@ -247,7 +255,9 @@ class GeneratorAgent:
         return metadata
 
     def _update_user_prompt_with_metadata(
-        self, user_prompt: str, metadata: FigureMetadata
+        self,
+        user_prompt: str,
+        metadata: FigureMetadata,
     ) -> str:
         """
         Update the user prompt with metadata extracted from the figure.
@@ -264,7 +274,8 @@ class GeneratorAgent:
             value = getattr(metadata, field_info.name)
             if value is not None:
                 description = field_info.metadata.get(
-                    "description", "No description available"
+                    "description",
+                    "No description available",
                 )
                 metadata_items.append(f"- {field_info.name} ({description}): {value}")
 
