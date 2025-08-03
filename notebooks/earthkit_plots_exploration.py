@@ -319,9 +319,6 @@ figure = ek.plots.quickplot(
     **kwargs,  # type: ignore
 )
 
-# TODO(high): quiver doesn't exist for a classic figure, so I need to figure out
-#             how to make a figure and a Map work together to plot the wind vectors
-#             and the temperature/pressure overlay.
 # figure.quiver(
 # u=data.sel(shortName="10u"),
 # v=data.sel(shortName="10v"),
@@ -388,7 +385,7 @@ buffer.seek(0)
 img = Image.open(buffer)
 
 # %%
-figure.title()  # TODO: extract the string title
+figure.title()
 
 # %% [markdown]
 # Observations:
