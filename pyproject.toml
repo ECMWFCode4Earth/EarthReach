@@ -25,6 +25,7 @@ dev = [
     "ruff>=0.12.7",
     "pytest>=8.3.5",
     "pre-commit>=4.0.1",
+    "mypy>=1.8.0",
 ]
 
 [project.optional-dependencies]
@@ -86,3 +87,29 @@ known-first-party = ["earth_reach"]
 force-single-line = false
 lines-between-types = 1
 split-on-trailing-comma = true
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+files = ["src/earth_reach"]
+
+# Ignore missing imports for external libraries
+[[tool.mypy.overrides]]
+module = [
+    "earthkit.*",
+    "scipy.*",
+    "fire.*",
+    "openai.*",
+    "google.*",
+    "PIL.*",
+    "dotenv.*",
+]
+ignore_missing_imports = true
+
+# Allow more flexible typing for complex API interactions
+[[tool.mypy.overrides]]
+module = "earth_reach.core.llm"
+warn_return_any = false
+disallow_untyped_defs = false

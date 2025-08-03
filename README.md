@@ -103,6 +103,7 @@ uv run era evaluate --image-path <path_to_image> --description "<description_str
 This project uses the following development tools:
 
 - **Ruff**: Fast Python linter and formatter
+- **mypy**: Static type checker for Python
 - **Pre-commit**: Git hooks for code quality checks
 - **Pytest**: Testing framework
 
@@ -112,6 +113,7 @@ The project is configured with pre-commit hooks that run automatically before ea
 
 - **Ruff linting**: Checks for common Python issues and enforces coding standards
 - **Ruff formatting**: Automatically formats code for consistency
+- **mypy type checking**: Validates type hints and catches import errors
 - **Basic checks**: Trailing whitespace, file endings, YAML/TOML syntax, merge conflicts
 
 ### Running Tools Manually
@@ -125,13 +127,17 @@ uv run ruff check .
 # Run ruff formatter
 uv run ruff format .
 
+# Run mypy type checker
+uv run mypy .
+
 # Run pre-commit hooks on all files
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 ### Configuration
 
 - Ruff configuration is in `pyproject.toml` under `[tool.ruff]`
+- mypy configuration is in `pyproject.toml` under `[tool.mypy]`
 - Pre-commit configuration is in `.pre-commit-config.yaml`
 
 ## License
