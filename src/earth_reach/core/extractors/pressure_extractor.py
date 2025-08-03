@@ -1,11 +1,21 @@
-from abc import ABC, abstractmethod
+"""
+Pressure-Center Data Extractor module.
+
+This module provides functionality to extract pressure centers (high and low pressure systems)
+from meteorological data, specifically mean sea level pressure fields in GRIB format.
+It uses local extrema detection with Gaussian smoothing to identify these centers.
+"""
+
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
-from earth_reach.config.logging import get_logger
+
 from scipy.ndimage import gaussian_filter, maximum_filter, minimum_filter
+
+from earth_reach.config.logging import get_logger
+from earth_reach.core.extractors.base_extractor import BaseDataExtractor
 
 logger = get_logger(__name__)
 
@@ -21,9 +31,9 @@ class PressureCenter:
     intensity: float
     timestamp: datetime
     confidence: float
-    grid_indices: Tuple[int, int]
+    grid_indices: tuple[int, int]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "type": self.center_type,
@@ -37,71 +47,7 @@ class PressureCenter:
         }
 
 
-class DataExtractorInterface(ABC):
-    """
-    Abstract base class for weather data extractors.
-
-    Provides common functionality and interface for extracting
-    meteorological features from various data sources.
-    """
-
-    def __init__(self, verbose: bool = True):
-        """
-        Initialize the data extractor.
-
-        Args:
-            verbose: Whether to print progress messages
-        """
-        self.verbose = verbose
-        self._data = None
-        self._metadata = {}
-
-    @abstractmethod
-    def validate_data(self, data: Any) -> bool:
-        """
-        Validate that the input data contains required variables.
-
-        Args:
-            data: Input data to validate
-
-        Returns:
-            bool: True if validation passes
-
-        Raises:
-            ValueError: If validation fails
-        """
-        pass
-
-    @abstractmethod
-    def extract(self, data: Any, **kwargs) -> List[Any]:
-        """
-        Extract features from the input data.
-
-        Args:
-            data: Input data
-            **kwargs: Additional extraction parameters
-
-        Returns:
-            List of extracted features
-        """
-        pass
-
-    @abstractmethod
-    def add_data_to_prompt(self, prompt: str, features: List[Any]) -> str:
-        """
-        Format data and add them to the prompt.
-
-        Args:
-            prompt: Prompt string to modify
-            features: List of extracted features
-
-        Returns:
-            str: Updated prompt with formatted data
-        """
-        pass
-
-
-class PressureCenterDataExtractor(DataExtractorInterface):
+class PressureCenterDataExtractor(BaseDataExtractor):
     """
     Concrete implementation for extracting pressure centers from GRIB data.
 
@@ -159,7 +105,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
             if self.pressure_var_name not in available_vars:
                 raise ValueError(
                     f"Required variable '{self.pressure_var_name}' not found. "
-                    f"Available variables: {', '.join(available_vars)}"
+                    f"Available variables: {', '.join(available_vars)}",
                 )
 
             lats = data.to_numpy(latitude=True)
@@ -172,12 +118,15 @@ class PressureCenterDataExtractor(DataExtractorInterface):
             return True
 
         except Exception as e:
-            logger.error(f"Validation failed: {str(e)}")
+            logger.error(f"Validation failed: {e!s}")
             raise
 
     def extract(
-        self, data: Any, smoothing: bool = True, return_all: bool = False
-    ) -> List[PressureCenter]:
+        self,
+        data: Any,
+        smoothing: bool = True,
+        return_all: bool = False,
+    ) -> list[PressureCenter]:
         """
         Extract pressure centers from GRIB data.
 
@@ -206,10 +155,18 @@ class PressureCenterDataExtractor(DataExtractorInterface):
         timestamp = data.datetime()
 
         high_centers = self._find_extrema(
-            pressure_smoothed, lats, lons, timestamp, extrema_type="high"
+            pressure_smoothed,
+            lats,
+            lons,
+            timestamp,
+            extrema_type="high",
         )
         low_centers = self._find_extrema(
-            pressure_smoothed, lats, lons, timestamp, extrema_type="low"
+            pressure_smoothed,
+            lats,
+            lons,
+            timestamp,
+            extrema_type="low",
         )
 
         all_centers = high_centers + low_centers
@@ -224,7 +181,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
         logger.info(
             f"Extracted {len(final_centers)} pressure centers "
             f"({sum(1 for c in final_centers if c.center_type == 'high')} high, "
-            f"{sum(1 for c in final_centers if c.center_type == 'low')} low)"
+            f"{sum(1 for c in final_centers if c.center_type == 'low')} low)",
         )
 
         return final_centers
@@ -236,7 +193,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
         lons: np.ndarray,
         timestamp: datetime,
         extrema_type: str,
-    ) -> List[PressureCenter]:
+    ) -> list[PressureCenter]:
         """Find local extrema in pressure field."""
 
         if self.neighborhood == 4:
@@ -257,7 +214,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
         centers = []
         indices = np.where(extrema)
 
-        for i, j in zip(indices[0], indices[1]):
+        for i, j in zip(indices[0], indices[1], strict=False):
             local_region = pressure[
                 max(0, i - 2) : min(pressure.shape[0], i + 3),
                 max(0, j - 2) : min(pressure.shape[1], j + 3),
@@ -265,7 +222,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
 
             if extrema_type == "high":
                 intensity = pressure[i, j] - np.mean(
-                    local_region[local_region != pressure[i, j]]
+                    local_region[local_region != pressure[i, j]],
                 )
             else:
                 intensity = (
@@ -277,7 +234,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
                 pressure[
                     max(0, i - 1) : min(pressure.shape[0], i + 2),
                     max(0, j - 1) : min(pressure.shape[1], j + 2),
-                ]
+                ],
             )
             gradient_magnitude = np.sqrt(grad_y**2 + grad_x**2).mean()
             confidence = 1.0 - np.exp(-gradient_magnitude)
@@ -297,8 +254,11 @@ class PressureCenterDataExtractor(DataExtractorInterface):
         return centers
 
     def _filter_by_distance(
-        self, centers: List[PressureCenter], lats: np.ndarray, lons: np.ndarray
-    ) -> List[PressureCenter]:
+        self,
+        centers: list[PressureCenter],
+        lats: np.ndarray,
+        lons: np.ndarray,
+    ) -> list[PressureCenter]:
         """Filter centers to ensure minimum distance between them."""
 
         if not centers or self.min_distance <= 0:
@@ -311,7 +271,10 @@ class PressureCenterDataExtractor(DataExtractorInterface):
             too_close = False
             for kept in kept_centers:
                 distance = self._haversine_distance(
-                    center.latitude, center.longitude, kept.latitude, kept.longitude
+                    center.latitude,
+                    center.longitude,
+                    kept.latitude,
+                    kept.longitude,
                 )
                 if distance < self.min_distance:
                     too_close = True
@@ -323,7 +286,11 @@ class PressureCenterDataExtractor(DataExtractorInterface):
         return kept_centers
 
     def _haversine_distance(
-        self, lat1: float, lon1: float, lat2: float, lon2: float
+        self,
+        lat1: float,
+        lon1: float,
+        lat2: float,
+        lon2: float,
     ) -> float:
         """Calculate distance between two points on Earth (km)."""
         R = 6371  # Earth radius in km
@@ -337,7 +304,7 @@ class PressureCenterDataExtractor(DataExtractorInterface):
 
         return R * c
 
-    def format_output(self, prompt: str, features: List[PressureCenter]) -> str:
+    def format_output(self, prompt: str, features: list[PressureCenter]) -> str:
         raise NotImplementedError(
-            "Should implement this method before use with DataExtractor"
+            "Should implement this method before use with DataExtractor",
         )

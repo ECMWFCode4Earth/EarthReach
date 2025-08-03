@@ -1,0 +1,5 @@
+"""
+Temperature Data Extractor module.
+
+
+"""
