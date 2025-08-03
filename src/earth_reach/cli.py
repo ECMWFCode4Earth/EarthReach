@@ -417,7 +417,7 @@ class CLI:
             sys.exit(1)
 
 
-def cli():
+def cli() -> None:
     """
     CLI entrypoint.
     """

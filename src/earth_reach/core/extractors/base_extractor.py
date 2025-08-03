@@ -27,7 +27,7 @@ class BaseDataExtractor(ABC):
         """
         self.verbose = verbose
         self._data = None
-        self._metadata = {}
+        self._metadata: dict[str, Any] = {}
 
     @abstractmethod
     def validate_data(self, data: Any) -> bool:
@@ -45,7 +45,7 @@ class BaseDataExtractor(ABC):
         """
 
     @abstractmethod
-    def extract(self, data: Any, **kwargs) -> list[Any]:
+    def extract(self, data: Any, **kwargs: Any) -> list[Any]:
         """
         Extract features from the input data.
 

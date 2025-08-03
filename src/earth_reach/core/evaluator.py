@@ -42,7 +42,7 @@ class CriterionEvaluatorOutput:
         """
         return 0 <= self.score <= 5
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.is_score_valid():
             raise ValueError("Score must be between 0 and 5.")
 

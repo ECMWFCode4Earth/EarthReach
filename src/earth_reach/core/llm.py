@@ -1,6 +1,7 @@
 import os
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import openai
 
@@ -89,7 +90,7 @@ class OpenAICompatibleLLM(LLMInterface):
         if not user_prompt or not user_prompt.strip():
             raise ValueError("user_prompt cannot be empty or None")
 
-        messages = []
+        messages: list[Any] = []
 
         if system_prompt and system_prompt.strip():
             messages.append({"role": "system", "content": system_prompt.strip()})
@@ -100,7 +101,7 @@ class OpenAICompatibleLLM(LLMInterface):
                 if not base64_image:
                     raise ValueError("Failed to convert image to base64")
 
-                user_content = [
+                user_content: Any = [
                     {"type": "text", "text": user_prompt.strip()},
                     {
                         "type": "image_url",
@@ -255,7 +256,7 @@ class GeminiLLM(LLMInterface):
             if system_prompt and system_prompt.strip():
                 full_prompt = f"{system_prompt.strip()}\n\n{user_prompt.strip()}"
 
-            contents = []
+            contents: list[Any] = []
             if image:
                 image_bytes = img_to_bytes(image)
                 if not image_bytes:

@@ -1,9 +1,10 @@
 import base64
 
 from io import BytesIO
+from typing import Any
 
 
-def img_to_base64(image_path: str | None = None, img=None) -> str:
+def img_to_base64(image_path: str | None = None, img: Any = None) -> str:
     """
     Convert an image to a base64 string.
 
@@ -26,7 +27,7 @@ def img_to_base64(image_path: str | None = None, img=None) -> str:
         return base64.b64encode(img_file.read()).decode("utf-8")
 
 
-def img_to_bytes(img) -> bytes:
+def img_to_bytes(img: Any) -> bytes:
     """
     Convert a PIL Image to bytes for Gemini API.
 

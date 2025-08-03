@@ -8,7 +8,7 @@ from earth_reach.core.evaluator import CriterionEvaluatorOutput, EvaluatorAgent
 from earth_reach.core.extractors.base_extractor import (
     BaseDataExtractor,
 )
-from earth_reach.core.generator import GeneratorAgent
+from earth_reach.core.generator import GeneratorAgent, GeneratorOutput
 from earth_reach.core.prompts.orchestrator import get_default_feedback_template
 
 logger = get_logger(__name__)
@@ -40,8 +40,15 @@ class Orchestrator:
         self.generator_agent = generator_agent
         self.evaluator_agent = evaluator_agent
         self.data_extractors = data_extractors if data_extractors is not None else []
+
         self.max_iterations = max_iterations
+        if self.max_iterations <= 0:
+            raise ValueError("max_iterations must be greater than 0")
+
         self.criteria_threshold = criteria_threshold
+        if self.criteria_threshold < 0 or self.criteria_threshold > 5:
+            raise ValueError("criteria_threshold must be between 0 and 5")
+
         self.feedback_template = feedback_template or get_default_feedback_template()
         self.criteria_limits_acknowledgment = {
             "coherence": "Warning: The logical flow and organization of this description may be unclear.",
@@ -78,6 +85,8 @@ class Orchestrator:
         # then add the features to the generator user prompt and evaluator prompt using a method similar to `provide_feedback_to_generator` that uses `append_user_prompt`
 
         try:
+            description: str | GeneratorOutput = ""
+            evaluation: list[CriterionEvaluatorOutput] = []
             for i in range(self.max_iterations):
                 description = self.generator_agent.generate(
                     figure=figure,
@@ -106,6 +115,13 @@ class Orchestrator:
             logger.warning(
                 f"Maximum iterations ({self.max_iterations}) reached without passing evaluation. Acknowledging limits of description.",
             )
+
+            if not isinstance(description, str):
+                raise TypeError(
+                    f"Expected description to be a string, got {type(description)}",
+                )
+            if not description:
+                raise ValueError("Final generated description is empty.")
 
             return self.acknowledge_limits_of_description(
                 description,
