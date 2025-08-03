@@ -4,8 +4,10 @@ from earthkit.data import FieldList
 from PIL.ImageFile import ImageFile
 
 from earth_reach.config.logging import get_logger
-from earth_reach.core.data_extractor import DataExtractorInterface
 from earth_reach.core.evaluator import CriterionEvaluatorOutput, EvaluatorAgent
+from earth_reach.core.extractors.base_extractor import (
+    BaseDataExtractor,
+)
 from earth_reach.core.generator import GeneratorAgent
 from earth_reach.core.prompts.orchestrator import get_default_feedback_template
 
@@ -19,7 +21,7 @@ class Orchestrator:
         self,
         generator_agent: GeneratorAgent,
         evaluator_agent: EvaluatorAgent,
-        data_extractors: list[DataExtractorInterface] | None = None,
+        data_extractors: list[BaseDataExtractor] | None = None,
         max_iterations: int = 3,
         criteria_threshold: int = 4,
         feedback_template: str | None = None,
@@ -30,7 +32,7 @@ class Orchestrator:
         Args:
             generator_agent: Instance of GeneratorAgent for generating descriptions
             evaluator_agent: Instance of EvaluatorAgent for evaluating descriptions
-            data_extractors: List of DataExtractorInterface instances for extracting features
+            data_extractors: List of BaseDataExtractor instances for extracting features
             max_iterations: Maximum number of iterations for generating descriptions
             criteria_threshold: Minimum score for evaluation criteria to pass
             feedback_template: Template for feedback to the generator agent (optional)
