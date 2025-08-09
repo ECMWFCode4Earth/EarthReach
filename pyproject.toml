@@ -12,6 +12,7 @@ dependencies = [
     "earthkit>=0.10.3",
     "earthkit-data>=0.13.8",
     "earthkit-plots>=0.3.1",
+    "scipy>=1.15.2",
     "openai>=1.77.0",
     "python-dotenv>=1.1.0",
     "hatchling>=1.27.0",
@@ -26,6 +27,7 @@ dev = [
     "pytest>=8.3.5",
     "pre-commit>=4.0.1",
     "mypy>=1.8.0",
+    "scipy-stubs>=1.16.1.0",
 ]
 
 [project.optional-dependencies]
@@ -95,21 +97,8 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 files = ["src/earth_reach"]
 
-# Ignore missing imports for external libraries
+# Auto type checking for untyped packages
 [[tool.mypy.overrides]]
-module = [
-    "earthkit.*",
-    "scipy.*",
-    "fire.*",
-    "openai.*",
-    "google.*",
-    "PIL.*",
-    "dotenv.*",
-]
-ignore_missing_imports = true
-
-# Allow more flexible typing for complex API interactions
-[[tool.mypy.overrides]]
-module = "earth_reach.core.llm"
-warn_return_any = false
-disallow_untyped_defs = false
+module = ["earthkit.*", "fire.*"]
+follow_untyped_imports = true
+warn_return_any = true

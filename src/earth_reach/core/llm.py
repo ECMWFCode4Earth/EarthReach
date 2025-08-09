@@ -7,6 +7,7 @@ import openai
 
 from google import genai
 from google.genai import types
+from PIL.ImageFile import ImageFile
 
 from earth_reach.core.utils import img_to_base64, img_to_bytes
 
@@ -19,7 +20,7 @@ class LLMInterface(ABC):
         self,
         user_prompt: str,
         system_prompt: str | None = None,
-        image=None,
+        image: ImageFile | None = None,
     ) -> str:
         """
         Generate a response from the LLM based on the user prompt and optional system prompt.
@@ -69,7 +70,7 @@ class OpenAICompatibleLLM(LLMInterface):
         self,
         user_prompt: str,
         system_prompt: str | None = None,
-        image=None,
+        image: ImageFile | None = None,
     ) -> str:
         """
         Generate a response from the LLM API based on the user prompt and optional system prompt.
@@ -126,8 +127,10 @@ class OpenAICompatibleLLM(LLMInterface):
 
             content = response.choices[0].message.content
 
-            if not content or not content.strip():
-                raise ValueError("The generated response content is empty")
+            if not content or not isinstance(content, str) or not content.strip():
+                raise ValueError(
+                    "The generated response content is empty or not a string"
+                )
 
             return content.strip()
 
@@ -230,7 +233,7 @@ class GeminiLLM(LLMInterface):
         self,
         user_prompt: str,
         system_prompt: str | None = None,
-        image=None,
+        image: ImageFile | None = None,
     ) -> str:
         """
         Generate a response from the Gemini API based on the user prompt and optional system prompt.
@@ -238,7 +241,7 @@ class GeminiLLM(LLMInterface):
         Args:
             user_prompt (str): The prompt provided by the user to define the task.
             system_prompt (str | None): An optional system prompt to guide the model's response.
-            image: Optional image to include in the request (PIL Image).
+            image: Optional image to include in the request (ImageFile).
 
         Returns:
             str: The generated response content from the Gemini API.
@@ -281,8 +284,10 @@ class GeminiLLM(LLMInterface):
 
             content = response.text
 
-            if not content or not content.strip():
-                raise ValueError("The generated response content is empty")
+            if not content or not isinstance(content, str) or not content.strip():
+                raise ValueError(
+                    "The generated response content is empty or not a string"
+                )
 
             return content.strip()
 
@@ -296,7 +301,7 @@ class GeminiLLM(LLMInterface):
         return f"GeminiLLM(model_name={self.model_name})"
 
 
-def create_llm(provider="groq", model_name: str | None = None) -> LLMInterface:
+def create_llm(provider: str = "groq", model_name: str | None = None) -> LLMInterface:
     """
     Create and return LLM instance.
 

@@ -187,11 +187,13 @@ class GeneratorAgent:
                 return parsed_output
 
             description = parsed_output.final_description
+            if not description or not description.strip():
+                raise ValueError("Final description is empty or None.")
 
         except Exception as e:
             raise RuntimeError(f"Failed to generate response: {e}") from e
 
-        return description  # type: ignore[return-value]
+        return description
 
     def parse_llm_response(self, response: str) -> GeneratorOutput:
         """
