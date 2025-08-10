@@ -3,16 +3,16 @@ Pressure-Center Data Extractor module.
 
 This module provides functionality to extract pressure centers (high and low pressure systems)
 from meteorological data, specifically mean sea level pressure fields in GRIB format.
-It uses local extrema detection with Gaussian smoothing to identify these centers.
+It uses simple local extrema detection to identify these centers.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
+import earthkit.data as ekd
 import numpy as np
 
-from scipy.ndimage import gaussian_filter, maximum_filter, minimum_filter
+from scipy.ndimage import maximum_filter, minimum_filter
 
 from earth_reach.config.logging import get_logger
 from earth_reach.core.extractors.base_extractor import BaseDataExtractor
@@ -27,22 +27,16 @@ class PressureCenter:
     center_type: str
     latitude: float
     longitude: float
-    pressure_hPa: float
-    intensity: float
-    timestamp: datetime
-    confidence: float
+    center_value_hPa: float
     grid_indices: tuple[int, int]
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
-            "type": self.center_type,
-            "lat": self.latitude,
-            "lon": self.longitude,
-            "pressure_hPa": self.pressure_hPa,
-            "intensity": self.intensity,
-            "timestamp": self.timestamp.isoformat(),
-            "confidence": self.confidence,
+            "center_type": self.center_type,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "center_value_hPa": self.center_value_hPa,
             "grid_indices": self.grid_indices,
         }
 
@@ -51,71 +45,67 @@ class PressureCenterDataExtractor(BaseDataExtractor):
     """
     Concrete implementation for extracting pressure centers from GRIB data.
 
-    Uses local extrema detection with Gaussian smoothing to identify
-    high and low pressure centers in mean sea level pressure fields.
+    Uses local extrema detection to identify high and low pressure centers
+    in mean sea level pressure fields.
     """
 
     def __init__(
         self,
-        sigma: float = 1.0,
-        min_distance: float = 500.0,  # km
-        min_intensity: float = 1.0,  # hPa
-        neighborhood: int = 8,  # 4 or 8 connected
         pressure_var_name: str = "msl",
-        **kwargs,
+        neighborhood_size: int = 200,
     ):
         """
         Initialize the pressure center extractor.
 
         Args:
-            sigma: Gaussian smoothing parameter (grid points)
-            min_distance: Minimum distance between centers (km)
-            min_intensity: Minimum pressure difference to be considered a center (hPa)
-            neighborhood: 4 or 8 connected neighborhood for extrema detection
             pressure_var_name: Name of pressure variable in GRIB data
-            **kwargs: Additional arguments passed to parent class
+            neighborhood_size: Size of neighborhood for local extrema detection
         """
-        super().__init__(**kwargs)
 
-        self.sigma = sigma
-        self.min_distance = min_distance
-        self.min_intensity = min_intensity
-        self.neighborhood = neighborhood
+        self.neighborhood_size = neighborhood_size
         self.pressure_var_name = pressure_var_name
 
-        if neighborhood not in [4, 8]:
-            raise ValueError("neighborhood must be 4 or 8")
-
-    def validate_data(self, data: Any) -> bool:
+    def validate_data(
+        self, data: ekd.FieldList
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Validate GRIB data contains mean sea level pressure.
+        Validate and return GRIB data pressure field.
 
         Args:
-            data: earthkit-data GRIB dataset
+            data (ekd.FieldList): GRIB data to validate
 
         Returns:
-            bool: True if validation passes
+            Tuple of (data array, latitudes, longitudes)
 
         Raises:
             ValueError: If required pressure variable not found
         """
         try:
             available_vars = [str(var) for var in data.metadata("shortName")]
-
             if self.pressure_var_name not in available_vars:
                 raise ValueError(
                     f"Required variable '{self.pressure_var_name}' not found. "
                     f"Available variables: {', '.join(available_vars)}",
                 )
 
-            lats = data.to_numpy(latitude=True)
-            lons = data.to_numpy(longitude=True)
+            data_field = data.sel(shortName=self.pressure_var_name)[0]
+            if not isinstance(data_field, ekd.Field):
+                raise ValueError(
+                    "Could not extract a valid pressure field from data.",
+                )
+            data_arr = data_field.to_numpy()
+            if data_arr is None or not isinstance(data_arr, np.ndarray):
+                raise ValueError("Data array is empty or not a valid numpy array.")
+
+            latlons = data_field.to_latlon()
+            lats = latlons["lat"]
+            lons = latlons["lon"]
 
             if lats is None or lons is None:
                 raise ValueError("Could not extract latitude/longitude coordinates")
 
-            logger.info(f"Validation passed. Found {self.pressure_var_name} variable.")
-            return True
+            logger.info("Validation passed.")
+            return data_arr, lats, lons
 
         except Exception as e:
             logger.error(f"Validation failed: {e!s}")
@@ -123,188 +113,88 @@ class PressureCenterDataExtractor(BaseDataExtractor):
 
     def extract(
         self,
-        data: Any,
-        smoothing: bool = True,
-        return_all: bool = False,
+        data: ekd.FieldList,
+        **kwargs: Any,
     ) -> list[PressureCenter]:
         """
         Extract pressure centers from GRIB data.
 
         Args:
-            data: earthkit-data GRIB dataset
-            smoothing: Whether to apply Gaussian smoothing
-            return_all: If True, return all extrema without filtering
+            data (ekd.FieldList): Input GRIB data
+            **kwargs: Additional extraction parameters
 
         Returns:
             List of PressureCenter objects
         """
-        self.validate_data(data)
+        pressure_centers = []
+        try:
+            data_arr, lats, lons = self.validate_data(data)
+            local_min = data == minimum_filter(data_arr, size=self.neighborhood_size)
+            local_max = data == maximum_filter(data_arr, size=self.neighborhood_size)
 
-        pressure_data = data.sel(shortName=self.pressure_var_name)
-        pressure_array = pressure_data.to_numpy()
-
-        lats = pressure_data.to_numpy(latitude=True)
-        lons = pressure_data.to_numpy(longitude=True)
-
-        if smoothing and self.sigma > 0:
-            pressure_smoothed = gaussian_filter(pressure_array, sigma=self.sigma)
-            logger.info(f"Applied Gaussian smoothing with sigma={self.sigma}")
-        else:
-            pressure_smoothed = pressure_array.copy()
-
-        timestamp = data.datetime()
-
-        high_centers = self._find_extrema(
-            pressure_smoothed,
-            lats,
-            lons,
-            timestamp,
-            extrema_type="high",
-        )
-        low_centers = self._find_extrema(
-            pressure_smoothed,
-            lats,
-            lons,
-            timestamp,
-            extrema_type="low",
-        )
-
-        all_centers = high_centers + low_centers
-
-        if return_all:
-            return all_centers
-
-        filtered_centers = [c for c in all_centers if c.intensity >= self.min_intensity]
-
-        final_centers = self._filter_by_distance(filtered_centers, lats, lons)
-
-        logger.info(
-            f"Extracted {len(final_centers)} pressure centers "
-            f"({sum(1 for c in final_centers if c.center_type == 'high')} high, "
-            f"{sum(1 for c in final_centers if c.center_type == 'low')} low)",
-        )
-
-        return final_centers
-
-    def _find_extrema(
-        self,
-        pressure: np.ndarray,
-        lats: np.ndarray,
-        lons: np.ndarray,
-        timestamp: datetime,
-        extrema_type: str,
-    ) -> list[PressureCenter]:
-        """Find local extrema in pressure field."""
-
-        if self.neighborhood == 4:
-            struct = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-        else:  # 8-connected
-            struct = np.ones((3, 3))
-
-        if extrema_type == "high":
-            extrema = pressure == maximum_filter(pressure, footprint=struct)
-        else:  # low
-            extrema = pressure == minimum_filter(pressure, footprint=struct)
-
-        extrema[0, :] = False
-        extrema[-1, :] = False
-        extrema[:, 0] = False
-        extrema[:, -1] = False
-
-        centers = []
-        indices = np.where(extrema)
-
-        for i, j in zip(indices[0], indices[1], strict=False):
-            local_region = pressure[
-                max(0, i - 2) : min(pressure.shape[0], i + 3),
-                max(0, j - 2) : min(pressure.shape[1], j + 3),
-            ]
-
-            if extrema_type == "high":
-                intensity = pressure[i, j] - np.mean(
-                    local_region[local_region != pressure[i, j]],
-                )
-            else:
-                intensity = (
-                    np.mean(local_region[local_region != pressure[i, j]])
-                    - pressure[i, j]
+            if local_max is None or local_min is None:
+                raise ValueError(
+                    "Could not find local extrema in the data.",
                 )
 
-            grad_y, grad_x = np.gradient(
-                pressure[
-                    max(0, i - 1) : min(pressure.shape[0], i + 2),
-                    max(0, j - 1) : min(pressure.shape[1], j + 2),
-                ],
+            min_indices = np.where(local_min)
+            max_indices = np.where(local_max)
+            for i in range(len(min_indices[0])):
+                row, col = min_indices[0][i], min_indices[1][i]
+                pressure_centers.append(
+                    PressureCenter(
+                        center_type="low",
+                        latitude=lats[row, col],
+                        longitude=lons[row, col],
+                        center_value_hPa=data_arr[row, col],
+                        grid_indices=(row, col),
+                    ),
+                )
+            for i in range(len(max_indices[0])):
+                row, col = max_indices[0][i], max_indices[1][i]
+                pressure_centers.append(
+                    PressureCenter(
+                        center_type="high",
+                        latitude=lats[row, col],
+                        longitude=lons[row, col],
+                        center_value_hPa=data_arr[row, col],
+                        grid_indices=(row, col),
+                    ),
+                )
+
+            return pressure_centers
+        except Exception as e:
+            logger.error(f"Extraction failed: {e!s}")
+            return []
+
+    def format_features_to_str(self, features: list[PressureCenter]) -> str:
+        output_str = "## Presure Center Extractor Output\n\n"
+        if not features:
+            output_str += "No pressure centers found.\n"
+            return output_str
+
+        low_pressure_centers = sorted(
+            [center for center in features if center.center_type == "low"],
+            key=lambda x: x.center_value_hPa,
+        )
+        high_pressure_centers = sorted(
+            [center for center in features if center.center_type == "high"],
+            key=lambda x: x.center_value_hPa,
+            reverse=True,
+        )
+        output_str += "**Low Pressure Centers**:\n"
+        for center in low_pressure_centers:
+            output_str += (
+                f"- {center.center_type.capitalize()} pressure center at "
+                f"({center.latitude:.2f}°N, {center.longitude:.2f}°E) "
+                f"with value {center.center_value_hPa:.2f} hPa.\n"
             )
-            gradient_magnitude = np.sqrt(grad_y**2 + grad_x**2).mean()
-            confidence = 1.0 - np.exp(-gradient_magnitude)
-
-            center = PressureCenter(
-                center_type=extrema_type,
-                latitude=float(lats[i, j]) if lats.ndim > 1 else float(lats[i]),
-                longitude=float(lons[i, j]) if lons.ndim > 1 else float(lons[j]),
-                pressure_hPa=float(pressure[i, j]),
-                intensity=abs(float(intensity)),
-                timestamp=timestamp,
-                confidence=float(confidence),
-                grid_indices=(int(i), int(j)),
+        output_str += "\n**High Pressure Centers**:\n"
+        for center in high_pressure_centers:
+            output_str += (
+                f"- {center.center_type.capitalize()} pressure center at "
+                f"({center.latitude:.2f}°N, {center.longitude:.2f}°E) "
+                f"with value {center.center_value_hPa:.2f} hPa.\n"
             )
-            centers.append(center)
 
-        return centers
-
-    def _filter_by_distance(
-        self,
-        centers: list[PressureCenter],
-        lats: np.ndarray,
-        lons: np.ndarray,
-    ) -> list[PressureCenter]:
-        """Filter centers to ensure minimum distance between them."""
-
-        if not centers or self.min_distance <= 0:
-            return centers
-
-        sorted_centers = sorted(centers, key=lambda c: c.intensity, reverse=True)
-
-        kept_centers = []
-        for center in sorted_centers:
-            too_close = False
-            for kept in kept_centers:
-                distance = self._haversine_distance(
-                    center.latitude,
-                    center.longitude,
-                    kept.latitude,
-                    kept.longitude,
-                )
-                if distance < self.min_distance:
-                    too_close = True
-                    break
-
-            if not too_close:
-                kept_centers.append(center)
-
-        return kept_centers
-
-    def _haversine_distance(
-        self,
-        lat1: float,
-        lon1: float,
-        lat2: float,
-        lon2: float,
-    ) -> float:
-        """Calculate distance between two points on Earth (km)."""
-        R = 6371  # Earth radius in km
-
-        lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
-
-        a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-        c = 2 * np.arcsin(np.sqrt(a))
-
-        return R * c
-
-    def format_output(self, prompt: str, features: list[PressureCenter]) -> str:
-        raise NotImplementedError(
-            "Should implement this method before use with DataExtractor",
-        )
+        return output_str

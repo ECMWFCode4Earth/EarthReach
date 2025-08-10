@@ -1,7 +1,7 @@
 """
 Base Data Extractor module.
 
-This module defines the abstract base class for data extractors in the EarthReach project.
+This module defines the abstract base class for data extractors.
 It provides a common interface and functionality for extracting meteorological features
 from GRIB files.
 """
@@ -9,43 +9,29 @@ from GRIB files.
 from abc import ABC, abstractmethod
 from typing import Any
 
+import earthkit.data as ekd
+
 
 class BaseDataExtractor(ABC):
-    """
-    Abstract base class for weather data extractors.
-
-    Provides common functionality and interface for extracting
-    meteorological features from various data sources.
-    """
-
-    def __init__(self, verbose: bool = False):
-        """
-        Initialize the data extractor.
-
-        Args:
-            verbose: Whether to print progress messages
-        """
-        self.verbose = verbose
-        self._data = None
-        self._metadata: dict[str, Any] = {}
+    """Abstract base class for weather data extractors."""
 
     @abstractmethod
-    def validate_data(self, data: Any) -> bool:
+    def validate_data(self, data: ekd.FieldList) -> Any:
         """
-        Validate that the input data contains required variables.
+        Parse, validate and return GRIB data.
 
         Args:
-            data: Input data to validate
+            data (ekd.FieldList): Input data to validate
 
         Returns:
-            bool: True if validation passes
+            Any: Parsed and validated data
 
         Raises:
             ValueError: If validation fails
         """
 
     @abstractmethod
-    def extract(self, data: Any, **kwargs: Any) -> list[Any]:
+    def extract(self, data: ekd.FieldList, **kwargs: Any) -> list[Any]:
         """
         Extract features from the input data.
 
@@ -58,14 +44,13 @@ class BaseDataExtractor(ABC):
         """
 
     @abstractmethod
-    def add_data_to_prompt(self, prompt: str, features: list[Any]) -> str:
+    def format_features_to_str(self, features: list[Any]) -> str:
         """
-        Format data and add them to the prompt.
+        Format extracted features into a prompt-friendly string.
 
         Args:
-            prompt: Prompt string to modify
             features: List of extracted features
 
         Returns:
-            str: Updated prompt with formatted data
+            str: Formatted string for prompt update
         """
