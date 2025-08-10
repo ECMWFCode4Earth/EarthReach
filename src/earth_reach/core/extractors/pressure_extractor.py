@@ -170,7 +170,7 @@ class PressureCenterDataExtractor(BaseDataExtractor):
     def format_features_to_str(self, features: list[PressureCenter]) -> str:
         output_str = "## Presure Center Extractor Output\n\n"
         if not features:
-            output_str += "No pressure centers found.\n"
+            output_str += "No pressure centers could be extracted.\n"
             return output_str
 
         low_pressure_centers = sorted(
