@@ -26,3 +26,6 @@ weather_images/
 *.png
 *.jpg
 *.jpeg
+
+# Data
+data/monthly_average.zarr

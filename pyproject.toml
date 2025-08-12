@@ -17,6 +17,7 @@ dependencies = [
     "python-dotenv>=1.1.0",
     "hatchling>=1.27.0",
     "fire @ git+https://github.com/google/python-fire.git@2025-03-23-ipython", # Fixes IPython v9.0 compatibility issue
+    "zarr>=3.1.1",
 ]
 
 [dependency-groups]
