@@ -1,6 +1,7 @@
 import base64
 
 from io import BytesIO
+from pathlib import Path
 
 from PIL.ImageFile import ImageFile
 
@@ -44,3 +45,9 @@ def img_to_bytes(img: ImageFile) -> bytes:
     bytes_io = BytesIO()
     img.save(bytes_io, format="PNG")
     return bytes_io.getvalue()
+
+
+def get_root_dir_path() -> Path:
+    """Get the root directory path of the project."""
+
+    return Path(__file__).parent.parent.parent.resolve()
