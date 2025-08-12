@@ -107,7 +107,7 @@ class PressureCenterDataExtractor(BaseDataExtractor):
             logger.info("Validation passed.")
             return data_arr, lats, lons
 
-        except Exception as e:
+        except ValueError as e:
             logger.error(f"Validation failed: {e!s}")
             raise
 
@@ -124,7 +124,7 @@ class PressureCenterDataExtractor(BaseDataExtractor):
             **kwargs: Additional extraction parameters
 
         Returns:
-            List of PressureCenter objects
+            List[PressureCenter]: List of PressureCenter objects
         """
         pressure_centers = []
         try:
@@ -168,6 +168,8 @@ class PressureCenterDataExtractor(BaseDataExtractor):
             return []
 
     def format_features_to_str(self, features: list[PressureCenter]) -> str:
+        """Format extracted temperature features into a prompt-friendly string."""
+
         output_str = "## Presure Center Extractor Output\n\n"
         if not features:
             output_str += "No pressure centers could be extracted.\n"
