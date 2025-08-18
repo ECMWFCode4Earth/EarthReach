@@ -10,7 +10,6 @@ from pathlib import Path
 
 import fire
 
-from dotenv import load_dotenv
 from PIL import Image
 
 from earth_reach.config.criteria import QualityCriteria
@@ -22,8 +21,6 @@ from earth_reach.core.orchestrator import Orchestrator
 from earth_reach.core.prompts.generator import get_default_generator_user_prompt
 
 logger = get_logger(__name__)
-
-load_dotenv()
 
 
 def load_prompt_from_file(file_path: str) -> str:
