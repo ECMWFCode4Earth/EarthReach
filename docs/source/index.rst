@@ -7,9 +7,9 @@ EarthReach documentation
    :target: https://opensource.org/licenses/apache-2-0
 
 
-EarthReach is an accessibility-focused python library. It's goal is to enable blind and low-vision earth scientists to access information present in weather-charts.
+EarthReach is a Python library for generating natural language descriptions of meteorological data visualizations. The library extends **earthkit-plots** by providing automated text generation capabilities for weather charts, enabling programmatic conversion of visual data representations into structured textual descriptions.
 
-This library is designed to extend the **earthkit-plots** library, by providing an optional easy to use integration point. It leverages the rich data and metadata contained in GRIB files and a framework of dual LLMs, a generator, and an evaluator, with access to the data and the image of the weather chart, to generate a scientific description.
+The system implements a dual-LLM architecture consisting of a generator agent and an evaluator agent. The generator creates initial descriptions from chart images and associated GRIB file metadata, while the evaluator assesses output quality across multiple criteria including scientific accuracy, coherence, and meteorological relevance. This iterative process continues until quality thresholds are met or maximum iterations are reached.
 
 
 .. toctree::
@@ -18,7 +18,6 @@ This library is designed to extend the **earthkit-plots** library, by providing 
 
    installation
    usage
-   example
    api
 
 Indices and tables
