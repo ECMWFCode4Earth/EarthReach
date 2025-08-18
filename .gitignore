@@ -29,3 +29,4 @@ weather_images/
 
 # Data
 data/monthly_average.zarr
+data/*.nc
