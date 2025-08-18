@@ -1,3 +1,10 @@
+"""
+Orchestrator module.
+
+This module provides the orchestrator class, driving the generator and evaluator successive
+interactions to generate high-quality weather chart descriptions.
+"""
+
 import earthkit.plots as ekp
 
 from earthkit.data import FieldList
