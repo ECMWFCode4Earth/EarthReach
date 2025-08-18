@@ -1,3 +1,10 @@
+"""
+Evaluator Agent module.
+
+This module provides the main structure and classes for evaluating weather chart descriptions
+automatically against a set of quality criteria.
+"""
+
 import re
 
 from dataclasses import MISSING, dataclass, fields

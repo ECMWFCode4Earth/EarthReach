@@ -1,3 +1,10 @@
+"""
+Generator Agent module.
+
+This module provides the main structures and classes for generating descriptions from
+weather chart images or eathkit-plots figures.
+"""
+
 import re
 
 from dataclasses import dataclass, field, fields
