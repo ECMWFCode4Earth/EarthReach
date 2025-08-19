@@ -19,10 +19,3 @@ The system implements a dual-LLM architecture consisting of a generator agent an
    installation
    usage
    api
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
