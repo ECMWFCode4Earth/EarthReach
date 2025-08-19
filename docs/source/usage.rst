@@ -47,8 +47,8 @@ Customize the agent behavior with initialization parameters:
 .. code-block:: python
 
    agent = EarthReachAgent(
-       provider="openai",           # Required: LLM provider
-       model_name="gpt-4",          # Optional: specific model (uses provider default)
+       provider="gemini",           # Required: LLM provider
+       model_name="gemini-2.5-pro", # Optional: specific model (uses provider default)
        max_iterations=5,            # Maximum evaluation iterations (default: 3)
        criteria_threshold=3         # Minimum quality score to pass (default: 4)
    )
