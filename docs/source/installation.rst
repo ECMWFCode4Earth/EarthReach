@@ -4,11 +4,11 @@ Installation
 Prerequisites
 -------------
 
-- `uv <https://docs.astral.sh/uv/>`: Python package and project manager (will automatically install Python 3.12+ if needed)
+- `uv <https://docs.astral.sh/uv/>`_: Python package and project manager (will automatically install Python 3.12+ if needed)
 - API key for a supported LLM provider (OpenAI, Google Gemini, Anthropic Claude, or Groq)
 
 Dependencies
------
+------------
 
 1. **Clone the repository**
 
