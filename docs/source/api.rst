@@ -6,7 +6,10 @@ This section provides detailed documentation of the EarthReach API.
 Core Components
 ---------------
 
-These are the main classes that implement the dual-LLM framework:
+The dual-LLM framework comprises three main components:
+- The GeneratorAgent: creating weather chart descriptions
+- The EvaluatorAgent: evaluating the generated chart descriptions
+- The Orchestrator: driving the successive interactions between the generator and evaluator
 
 GeneratorAgent
 ~~~~~~~~~~~~~~
@@ -37,15 +40,10 @@ Orchestrator
    :members:
    :show-inheritance:
 
-LLM Interface
-~~~~~~~~~~~~~
-
-.. autoclass:: earth_reach.core.llm.LLMInterface
-   :members:
-   :show-inheritance:
-
 Data Extractors
 ---------------
+
+Data extractors analyze GRIB file metadata to extract relevant meteorological information, which is then used to enhance prompts for both the generator and evaluator agents.
 
 Base Extractor
 ~~~~~~~~~~~~~~
@@ -71,6 +69,13 @@ Pressure Extractor
 Configuration
 -------------
 
+LLM Interface
+~~~~~~~~~~~~~
+
+.. autoclass:: earth_reach.core.llm.LLMInterface
+   :members:
+   :show-inheritance:
+
 Evaluation Criteria
 ~~~~~~~~~~~~~~~~~~~
 
@@ -87,6 +92,8 @@ Logging Configuration
 
 Command Line Interface
 ----------------------
+
+The CLI provides convenient access to EarthReach's core functionality through command-line commands. However, as it operates solely on image files without access to underlying GRIB metadata, the CLI generates less detailed descriptions compared to the full *earthkit-plots* library integration.
 
 .. automodule:: earth_reach.cli
    :members:
