@@ -9,5 +9,14 @@ from earth_reach.core.evaluator import EvaluatorAgent
 from earth_reach.core.generator import GeneratorAgent
 from earth_reach.core.llm import GeminiLLM, GroqLLM, OpenAILLM
 from earth_reach.core.orchestrator import Orchestrator
+from earth_reach.main import EarthReachAgent
 
-__all__ = [Orchestrator, GeneratorAgent, EvaluatorAgent, OpenAILLM, GeminiLLM, GroqLLM]
+__all__ = [
+    "EarthReachAgent",
+    "EvaluatorAgent",
+    "GeminiLLM",
+    "GeneratorAgent",
+    "GroqLLM",
+    "OpenAILLM",
+    "Orchestrator",
+]
