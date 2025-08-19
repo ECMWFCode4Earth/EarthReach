@@ -80,6 +80,9 @@ class Orchestrator:
 
         Returns:
             str: The final weather description.
+
+        Raises:
+            RuntimeError: if an error occurs during description generation
         """
         if figure is not None and image is not None:
             raise ValueError(
