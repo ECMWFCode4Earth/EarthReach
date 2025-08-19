@@ -26,6 +26,8 @@ Basic Usage
    description = agent.generate_alt_description(figure, data)
    print(description)
 
+See `notebooks/example.ipynb` for a practical usage example.
+
 Input Requirements
 ~~~~~~~~~~~~~~~~~~
 
