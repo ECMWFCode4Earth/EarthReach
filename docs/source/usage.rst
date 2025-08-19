@@ -22,7 +22,7 @@ Basic Usage
    figure = ekp.quickplot(data, mode="overlay")
 
    # Generate description
-   agent = EarthReachAgent()
+   agent = EarthReachAgent(provider="openai")
    description = agent.generate_alt_description(figure, data)
    print(description)
 
@@ -47,9 +47,21 @@ Customize the agent behavior with initialization parameters:
 .. code-block:: python
 
    agent = EarthReachAgent(
-       max_iterations=5,      # Maximum evaluation iterations (default: 3)
-       criteria_threshold=3   # Minimum quality score to pass (default: 4)
+       provider="openai",           # Required: LLM provider
+       model_name="gpt-4",          # Optional: specific model (uses provider default)
+       max_iterations=5,            # Maximum evaluation iterations (default: 3)
+       criteria_threshold=3         # Minimum quality score to pass (default: 4)
    )
+
+**Supported Providers**:
+
+- ``"openai"``: OpenAI models (GPT-3.5, GPT-4, etc.)
+- ``"gemini"``: Google Gemini models
+- ``"anthropic"``: Anthropic Claude models
+- ``"groq"``: Groq models
+
+.. note::
+   Ensure you have configured the API key for your chosen provider as an environment variable (e.g., ``OPENAI_API_KEY``, ``GEMINI_API_KEY``, etc.). See the :doc:`installation` section for details.
 
 Command Line Interface
 ----------------------
