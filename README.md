@@ -105,14 +105,10 @@ View all commands and options:
 uv run era --help
 ```
 
-### Generate weather chart descriptions
-
 Generate a natural language description from a weather chart image:
 ```sh
 uv run era generate --image-path <path_to_image>
 ```
-
-### Evaluate descriptions
 
 Evaluate the accuracy of a description against a weather chart:
 
