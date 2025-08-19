@@ -69,12 +69,6 @@ You're now ready to use the project.
 └── uv.lock                   # Locked dependency versions
 ```
 
-## VLLM Inference Server
-
-To run this project, you will need to have an openAI-compatible LLM inference server.
-
-We provide instructions on how to setup your own secured inference server using [VLLM](./vllm/setup.md).
-
 ## Basic Usage
 
 ```python
@@ -121,6 +115,11 @@ Evaluate the accuracy of a description against a weather chart:
 ```sh
 uv run era evaluate --image-path <path_to_image> --description "<description_string>"
 ```
+## VLLM Inference Server
+
+EarthReach supports any OpenAI-compatible API endpoint for self-hosted LLMs. See `vllm/` directory for a VLLM setup example.
+
+**Warning**: Self-hosting requires advanced system administration skills and significant GPU resources. Recommended only for experienced users.
 
 ## Development
 
