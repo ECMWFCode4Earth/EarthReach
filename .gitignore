@@ -18,11 +18,6 @@ weather_images/
 # Common
 *.DS_Store
 
-# Images
-*.png
-*.jpg
-*.jpeg
-
 # Data
 data/monthly_average.zarr
 data/*.nc
