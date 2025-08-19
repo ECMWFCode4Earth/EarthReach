@@ -175,6 +175,10 @@ class PressureCenterDataExtractor(BaseDataExtractor):
             output_str += "No pressure centers could be extracted.\n"
             return output_str
 
+        output_str += (
+            "Information extracted about the pressure centers present on the map:\n\n"
+        )
+
         low_pressure_centers = sorted(
             [center for center in features if center.center_type == "low"],
             key=lambda x: x.center_value_hPa,
