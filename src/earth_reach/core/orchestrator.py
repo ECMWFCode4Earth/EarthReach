@@ -89,14 +89,19 @@ class Orchestrator:
                 "Only one of 'figure' or 'image' can be provided, not both.",
             )
 
-        for extractor in self.data_extractors:
-            try:
-                features = extractor.extract(data)
-                features_str = extractor.format_features_to_str(features)
-                self._add_data_features_to_agent_prompt(features_str, agent="generator")
-                self._add_data_features_to_agent_prompt(features_str, agent="evaluator")
-            except Exception:
-                continue
+        if data is not None:
+            for extractor in self.data_extractors:
+                try:
+                    features = extractor.extract(data)
+                    features_str = extractor.format_features_to_str(features)
+                    self._add_data_features_to_agent_prompt(
+                        features_str, agent="generator"
+                    )
+                    self._add_data_features_to_agent_prompt(
+                        features_str, agent="evaluator"
+                    )
+                except Exception:
+                    continue
 
         try:
             description: str | GeneratorOutput = ""
