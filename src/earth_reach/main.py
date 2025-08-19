@@ -24,9 +24,13 @@ from earth_reach.core.prompts.generator import get_default_generator_user_prompt
 logger = get_logger(__name__)
 
 
+# TODO(high): update so that generation continues if data is none, but just don't instantiate the data extractors and probably log it
 class EarthReachAgent:
     """
     Main agent class for generating weather chart descriptions.
+
+    This class is meant to be the main entrypoint for the earthkit.plots integration.
+    To generate descriptions from images, instead of figure and data objects, use the provided CLI.
 
     Provides a high-level interface for the dual-LLM framework, handling
     data validation, component initialization, and orchestrated generation.
