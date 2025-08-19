@@ -104,7 +104,6 @@ class PressureCenterDataExtractor(BaseDataExtractor):
             if lats is None or lons is None:
                 raise ValueError("Could not extract latitude/longitude coordinates")
 
-            logger.info("Validation passed.")
             return data_arr, lats, lons
 
         except ValueError as e:
