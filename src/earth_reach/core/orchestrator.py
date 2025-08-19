@@ -123,7 +123,8 @@ class Orchestrator:
                 self.provide_feedback_to_generator(i + 1, description, evaluation)
 
             logger.warning(
-                f"Maximum iterations ({self.max_iterations}) reached without passing evaluation. Acknowledging limits of description.",
+                "Maximum iterations %d reached without passing evaluation. Acknowledging limits of description.",
+                self.max_iterations,
             )
 
             if not isinstance(description, str):
