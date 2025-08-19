@@ -1,3 +1,10 @@
+"""
+LLM Interface module.
+
+Provides an abstract interface and concrete implementations for various
+Large Language Model providers including OpenAI, Google Gemini, and Anthropic Claude.
+"""
+
 import os
 
 from abc import ABC, abstractmethod

@@ -1,3 +1,10 @@
+"""
+Generator prompts module.
+
+Contains default prompt templates used by the generator component
+to create detailed weather chart descriptions from meteorological visualizations.
+"""
+
 DEFAULT_GENERATOR_USER_PROMPT = """# Weather Chart Alt-Text Generation System
 
 ## ROLE AND CONTEXT SETTING

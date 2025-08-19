@@ -1,3 +1,10 @@
+"""
+Evaluator prompts module.
+
+Contains default prompt templates used by the evaluator component
+to assess the quality of generated weather chart descriptions across multiple criteria.
+"""
+
 DEFAULT_COHERENCE_CRITERIA_EVALUATOR_USER_PROMPT = """# "Coherence" Quality Criteria Evaluation Instructions
 
 ## ROLE AND CONTEXT SETTING

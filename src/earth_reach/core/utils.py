@@ -1,3 +1,10 @@
+"""
+Utility functions module.
+
+Provides utility functions for image processing, file path operations,
+and data format conversions.
+"""
+
 import base64
 
 from io import BytesIO

@@ -1,3 +1,10 @@
+"""
+Quality criteria module.
+
+Defines the evaluation criteria used to assess the quality of generated
+weather chart descriptions across multiple dimensions including coherence and accuracy.
+"""
+
 from enum import Enum
 
 
