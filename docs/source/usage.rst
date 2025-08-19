@@ -66,7 +66,7 @@ Customize the agent behavior with initialization parameters:
 Command Line Interface
 ----------------------
 
-EarthReach also provides a command-line interface for standalone usage.
+EarthReach also provides a command-line interface for convenient standalone usage. However, as it operates solely on image files without access to underlying GRIB metadata, the CLI generates less detailed descriptions compared to the full earthkit-plots library integration.
 
 Getting Started
 ---------------
