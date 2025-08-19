@@ -122,7 +122,7 @@ class Orchestrator:
 
                 self.provide_feedback_to_generator(i + 1, description, evaluation)
 
-            logger.warning(
+            logger.info(
                 "Maximum iterations %d reached without passing evaluation. Acknowledging limits of description.",
                 self.max_iterations,
             )
