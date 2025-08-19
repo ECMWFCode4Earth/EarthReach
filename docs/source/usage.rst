@@ -1,7 +1,60 @@
 Usage
 =====
 
-EarthReach provides a command-line interface for generating and evaluating weather chart descriptions.
+Library Integration
+-------------------
+
+The primary way to use EarthReach is through the ``EarthReachAgent`` class, designed for integration with earthkit-plots and other Python applications.
+
+Basic Usage
+~~~~~~~~~~~
+
+.. code-block:: python
+
+   from earth_reach import EarthReachAgent
+   import earthkit.plots as ekp
+   import earthkit.data as ekd
+
+   # Load your data with earthkit-data
+   data = ekd.from_source("file", "your_data.grib")
+
+   # Create a weather chart with earthkit-plots
+   figure = ekp.quickplot(data, mode="overlay")
+
+   # Generate description
+   agent = EarthReachAgent()
+   description = agent.generate_alt_description(figure, data)
+   print(description)
+
+Input Requirements
+~~~~~~~~~~~~~~~~~~
+
+The ``generate_alt_description`` method requires:
+
+- **figure**: An ``earthkit.plots.Figure`` object containing the weather chart
+- **data**: An ``earthkit.data.FieldList`` containing GRIB meteorological data
+
+**Required Variables**: The data must contain both:
+
+- ``2t``: 2-meter temperature fields
+- ``msl``: Mean sea level pressure fields
+
+Configuration Options
+~~~~~~~~~~~~~~~~~~~~~
+
+Customize the agent behavior with initialization parameters:
+
+.. code-block:: python
+
+   agent = EarthReachAgent(
+       max_iterations=5,      # Maximum evaluation iterations (default: 3)
+       criteria_threshold=3   # Minimum quality score to pass (default: 4)
+   )
+
+Command Line Interface
+----------------------
+
+EarthReach also provides a command-line interface for standalone usage.
 
 Getting Started
 ---------------
