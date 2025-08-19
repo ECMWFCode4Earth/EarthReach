@@ -25,6 +25,7 @@ logger = get_logger(__name__)
 
 
 # TODO(high): update so that generation continues if data is none, but just don't instantiate the data extractors and probably log it
+# TODO(high): add parameter to use or not data extractors
 class EarthReachAgent:
     """
     Main agent class for generating weather chart descriptions.
