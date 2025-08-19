@@ -182,8 +182,6 @@ class EarthReachAgent:
         """
         Generate alternative text description for a weather chart.
 
-        This is the main method called by earthkit-plots integration.
-
         Args:
             figure: earthkit.plots Figure object containing the weather chart
             data: earthkit.data FieldList containing GRIB meteorological data
