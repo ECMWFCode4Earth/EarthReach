@@ -94,7 +94,7 @@ class Orchestrator:
                 features = extractor.extract(data)
                 features_str = extractor.format_features_to_str(features)
                 self._add_data_features_to_agent_prompt(features_str, agent="generator")
-                self._add_data_features_to_agent_prompt(features, agent="evaluator")
+                self._add_data_features_to_agent_prompt(features_str, agent="evaluator")
             except Exception:
                 continue
 
