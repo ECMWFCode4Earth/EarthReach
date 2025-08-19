@@ -89,10 +89,14 @@ class Orchestrator:
                 "Only one of 'figure' or 'image' can be provided, not both.",
             )
 
-        # TODO(high): to integrate with the list of data extractors, verify that pressure and temperature fields are present
-        # if one of them is not present, log a warning
-        # if present then try to extract features from the data
-        # then add the features to the generator user prompt and evaluator prompt using a method similar to `provide_feedback_to_generator` that uses `append_user_prompt`
+        for extractor in self.data_extractors:
+            try:
+                features = extractor.extract(data)
+                features_str = extractor.format_features_to_str(features)
+                self._add_data_features_to_agent_prompt(features_str, agent="generator")
+                self._add_data_features_to_agent_prompt(features, agent="evaluator")
+            except Exception:
+                continue
 
         try:
             description: str | GeneratorOutput = ""
@@ -117,10 +121,10 @@ class Orchestrator:
                     figure=figure,
                 )
 
-                if self.verify_evaluation_passes(evaluation):
+                if self._verify_evaluation_passes(evaluation):
                     return description
 
-                self.provide_feedback_to_generator(i + 1, description, evaluation)
+                self._provide_feedback_to_generator(i + 1, description, evaluation)
 
             logger.info(
                 "Maximum iterations %d reached without passing evaluation. Acknowledging limits of description.",
@@ -134,14 +138,31 @@ class Orchestrator:
             if not description:
                 raise ValueError("Final generated description is empty.")
 
-            return self.acknowledge_limits_of_description(
+            return self._acknowledge_limits_of_description(
                 description,
                 evaluation,
             )
         except Exception as e:
             raise RuntimeError("Failed to generate a description") from e
 
-    def verify_evaluation_passes(
+    def _add_data_features_to_agent_prompt(self, features: str, agent: str) -> None:
+        """Add extracted data features to end of agent prompt
+
+        Args:
+            features (str): extracted and string formatted data features
+            agent (str): agent to add the prompt to
+        """
+        if agent not in ["generator", "evaluator"]:
+            raise ValueError(
+                f"agent parameter should be one of ['generator', 'evaluator'], found {agent}"
+            )
+
+        if agent == "generator":
+            self.generator_agent.append_user_prompt(features)
+
+        self.evaluator_agent.append_user_prompt(features)
+
+    def _verify_evaluation_passes(
         self,
         evaluation: list[CriterionEvaluatorOutput],
     ) -> bool:
@@ -158,7 +179,7 @@ class Orchestrator:
             criterion.score >= self.criteria_threshold for criterion in evaluation
         )
 
-    def provide_feedback_to_generator(
+    def _provide_feedback_to_generator(
         self,
         evaluation_id: int,
         description: str,
@@ -195,7 +216,7 @@ class Orchestrator:
 
         self.generator_agent.append_user_prompt(feedback)
 
-    def acknowledge_limits_of_description(
+    def _acknowledge_limits_of_description(
         self,
         description: str,
         evaluation: list[CriterionEvaluatorOutput],

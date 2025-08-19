@@ -318,6 +318,10 @@ class CriterionEvaluator:
         buffer.seek(0)
         return Image.open(buffer)
 
+    def append_user_prompt(self, text: str) -> None:
+        """Append additional text to the user prompt."""
+        self.user_prompt += f"\n\n{text.strip()}"
+
 
 class CriterionEvaluatorFactory:
     """Factory class for creating single criterion evaluator agents."""
@@ -415,3 +419,8 @@ class EvaluatorAgent:
             return evaluations
         except Exception as e:
             raise RuntimeError(f"Failed to evaluate description: {e}") from e
+
+    def append_user_prompt(self, text: str) -> None:
+        """Append additional text to the user prompt of each criterion evaluator."""
+        for evaluator in self.evaluators:
+            evaluator.user_prompt += f"\n\n{text.strip()}"
