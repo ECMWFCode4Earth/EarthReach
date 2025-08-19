@@ -5,9 +5,9 @@ This module provides the orchestrator class, driving the generator and evaluator
 interactions to generate high-quality weather chart descriptions.
 """
 
+import earthkit.data as ekd
 import earthkit.plots as ekp
 
-from earthkit.data import FieldList
 from PIL.ImageFile import ImageFile
 
 from earth_reach.config.logging import get_logger
@@ -68,7 +68,7 @@ class Orchestrator:
         self,
         figure: ekp.Figure | None = None,
         image: ImageFile | None = None,
-        data: FieldList | None = None,
+        data: ekd.FieldList | None = None,
     ) -> str:
         """
         Run the iterative process of generating and evaluating a weather chart description until quality criteria are met.
