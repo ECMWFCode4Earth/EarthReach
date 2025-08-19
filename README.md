@@ -17,7 +17,11 @@
 
 ## EarthReach
 
-EarthReach is a challenge from the 2025 edition dedicated to enhancing the accessibility of meteorological data visualisations produced by Earthkit, by equipping the plots module with LLM-powered alternative text generation capabilities.
+EarthReach is a Python library for generating natural language descriptions of meteorological data visualizations. The library extends [earthkit-plots](https://github.com/ecmwf/earthkit-plots) by providing automated text generation capabilities for weather charts, enabling programmatic conversion of visual data representations into structured textual descriptions.
+
+The system implements a dual-LLM architecture consisting of a generator agent and an evaluator agent. The generator creates initial descriptions from chart images and associated GRIB file metadata, while the evaluator assesses output quality across multiple criteria including scientific accuracy, coherence, and meteorological relevance. This iterative process continues until quality thresholds are met or maximum iterations are reached.
+
+![Global temperature and mean sea level map](./docs/source/_static/example_global_chart.png)
 
 ## Installation
 
