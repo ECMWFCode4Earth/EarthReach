@@ -5,6 +5,7 @@ Prerequisites
 -------------
 
 - `uv <https://docs.astral.sh/uv/>`_: Python package and project manager (will automatically install Python 3.12+ if needed)
+- `Climate Data Store <https://cds.climate.copernicus.eu/how-to-api>`_ API key configured for accessing meteorological data
 - API key for a supported LLM provider (OpenAI, Google Gemini, Anthropic Claude, or Groq)
 
 Dependencies
