@@ -7,6 +7,7 @@ Core Components
 ---------------
 
 The dual-LLM framework comprises three main components:
+
 - The GeneratorAgent: creating weather chart descriptions
 - The EvaluatorAgent: evaluating the generated chart descriptions
 - The Orchestrator: driving the successive interactions between the generator and evaluator
