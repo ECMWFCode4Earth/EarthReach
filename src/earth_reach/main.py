@@ -113,26 +113,28 @@ class EarthReachAgent:
         logger.info("Creating data extractors...")
         extractors = []
 
-        try:
-            available_vars = set()
-            for field in data:
-                param = field.metadata("param")
-                if param:
-                    available_vars.add(param)
+        available_vars = set()
+        for field in data:
+            param = field.metadata("param")
+            if param:
+                available_vars.add(param)
 
-            if "2t" in available_vars:
-                logger.debug("Creating TemperatureDataExtractor for 2t variable")
+        if "2t" in available_vars:
+            try:
                 extractors.append(TemperatureDataExtractor())
+                logger.debug("Temperature data extractor created")
+            except Exception as e:
+                logger.debug("Could not create temperature data extractor: %s", e)
 
-            if "msl" in available_vars:
-                logger.debug("Creating PressureCenterDataExtractor for msl variable")
+        if "msl" in available_vars:
+            try:
                 extractors.append(PressureCenterDataExtractor())
+                logger.debug("Pressure centers data extractor created")
+            except Exception as e:
+                logger.debug("Could not create pressure centers data extractor: %s", e)
 
-            logger.info("Created %d data extractors", len(extractors))
-            return extractors
-
-        except Exception as e:
-            raise RuntimeError(f"Failed to create data extractors: {e}") from e
+        logger.info("Created %d data extractors", len(extractors))
+        return extractors
 
     def _setup_components(
         self, data_extractors: list[BaseDataExtractor]

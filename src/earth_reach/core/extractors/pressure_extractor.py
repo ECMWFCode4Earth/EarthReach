@@ -108,7 +108,7 @@ class PressureCenterDataExtractor(BaseDataExtractor):
             return data_arr, lats, lons
 
         except ValueError as e:
-            logger.error(f"Validation failed: {e!s}")
+            logger.error("Pressure centers data extractor validation failed: %s", e)
             raise
 
     def extract(
@@ -164,7 +164,7 @@ class PressureCenterDataExtractor(BaseDataExtractor):
 
             return pressure_centers
         except Exception as e:
-            logger.error(f"Extraction failed: {e!s}")
+            logger.error("Pressure center data extraction failed: %s", e)
             return []
 
     def format_features_to_str(self, features: list[PressureCenter]) -> str:

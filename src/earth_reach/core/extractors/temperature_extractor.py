@@ -56,9 +56,13 @@ class TemperatureDataExtractor(BaseDataExtractor):
             temperature_var_name (str): Name of the temperature variable in GRIB data.
         """
         self.temperature_var_name = temperature_var_name
-        self.average_temp_data = xr.open_dataset(
-            get_root_dir_path() / "data" / "average_monthly_regional_temperature.nc"
-        )
+        try:
+            self.average_temp_data = xr.open_dataset(
+                get_root_dir_path() / "data" / "average_monthly_regional_temperature.nc"
+            )
+        except Exception as e:
+            logger.error("Could not load cached average temperature data file: %s", e)
+            raise
 
     def validate_data(self, data: ekd.FieldList) -> ekd.FieldList:
         """
@@ -97,10 +101,9 @@ class TemperatureDataExtractor(BaseDataExtractor):
             if lats is None or lons is None:
                 raise ValueError("Could not extract latitude/longitude coordinates")
 
-            logger.info("Validation passed.")
             return data_arr, lats, lons
         except ValueError as e:
-            logger.error(f"Validation failed: {e!s}")
+            logger.error("Temperature data extractor validation failed: %s", e)
             raise
 
     def extract(self, data: ekd.FieldList, **kwargs: Any) -> list[TemperatureData]:
