@@ -1,6 +1,9 @@
 # EarthReach Agent: Dual-LLM Framework for Validated Meteorological Chart Descriptions
 
 <p align="center">
+  <a href="https://www.python.org/downloads/release/python-3120/">
+    <img src="https://img.shields.io/badge/python-3.12-blue.svg" alt="Python 3.12">
+  </a>
   <a href="https://opensource.org/licenses/apache-2-0">
     <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
   </a>
@@ -20,7 +23,9 @@ EarthReach is a challenge from the 2025 edition dedicated to enhancing the acces
 
 ### Prerequisites
 
-- [uv](https://docs.astral.sh/uv/) - Python package and project manager (will automatically install Python 3.12+ if needed)
+- [uv](https://docs.astral.sh/uv/): Python package and project manager (will automatically install Python 3.12+ if needed)
+- [Climate Data Store ](https://cds.climate.copernicus.eu/how-to-api): API key configured for accessing meteorological data
+- API key for a supported LLM provider (OpenAI, Google Gemini, Anthropic Claude, Groq, or any OpenAI-compatible API provider)
 
 ### Setup
 
@@ -70,9 +75,30 @@ To run this project, you will need to have an openAI-compatible LLM inference se
 
 We provide instructions on how to setup your own secured inference server using [VLLM](./vllm/setup.md).
 
-## Usage
+## Basic Usage
 
-The project provides a command-line interface (CLI) accessible through `earth-reach-agent` or its shorter alias `era`.
+```python
+from earth_reach import EarthReachAgent
+import earthkit.plots as ekp
+import earthkit.data as ekd
+
+# Load your data with earthkit-data
+data = ekd.from_source("file", "your_data.grib")
+
+# Create a weather chart with earthkit-plots
+figure = ekp.quickplot(data, mode="overlay")
+
+# Generate description
+agent = EarthReachAgent(provider="openai")
+description = agent.generate_alt_description(figure, data)
+print(description)
+```
+
+See `notebooks/example.ipynb` for a practical usage example.
+
+## CLI Interface
+
+EarthReach includes a standalone CLI that works on image files only, producing less detailed descriptions than the full library integration.
 
 ### Available Commands
 
