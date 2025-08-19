@@ -57,4 +57,4 @@ def img_to_bytes(img: ImageFile) -> bytes:
 def get_root_dir_path() -> Path:
     """Get the root directory path of the project."""
 
-    return Path(__file__).parent.parent.parent.resolve()
+    return Path(__file__).parent.parent.parent.parent.resolve()
