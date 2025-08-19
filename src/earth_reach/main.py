@@ -34,21 +34,29 @@ class EarthReachAgent:
 
     def __init__(
         self,
+        provider: str,
+        model_name: str | None = None,
         max_iterations: int = 3,
         criteria_threshold: int = 4,
     ) -> None:
         """
-        Initialize the EarthReachAgent with configuration parameters.
+        Initialize the EarthReachAgent with LLM provider and configuration parameters.
 
         Args:
+            provider: LLM provider name (e.g., "openai", "gemini", "groq", "anthropic")
+            model_name: Specific model name to use (optional, uses provider default)
             max_iterations: Maximum number of iterations for the orchestrator
             criteria_threshold: Minimum score for evaluation criteria to pass
         """
-        self.required_vars = ("2t", "msl")
+        self.provider = provider
+        self.model_name = model_name
+        self.required_vars = {"2t", "msl"}
         self.max_iterations = max_iterations
         self.criteria_threshold = criteria_threshold
         logger.info(
-            "EarthReachAgent initialized with max_iterations=%d, criteria_threshold=%d",
+            "EarthReachAgent initialized with provider=%s, model=%s, max_iterations=%d, criteria_threshold=%d",
+            provider,
+            model_name or "default",
             max_iterations,
             criteria_threshold,
         )
@@ -143,7 +151,7 @@ class EarthReachAgent:
         """
         try:
             logger.debug("Initializing components...")
-            llm = create_llm()
+            llm = create_llm(provider=self.provider, model_name=self.model_name)
 
             generator = GeneratorAgent(
                 llm=llm,
