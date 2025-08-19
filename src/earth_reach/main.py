@@ -95,8 +95,6 @@ class EarthReachAgent:
         if missing_vars:
             raise ValueError(f"Required variables missing from data: {missing_vars}")
 
-        logger.debug("Input validation passed. Available variables: %s", available_vars)
-
     def _create_data_extractors(self, data: ekd.FieldList) -> list[BaseDataExtractor]:
         """
         Create appropriate data extractors based on available variables in the data.
