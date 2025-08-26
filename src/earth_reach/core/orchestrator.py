@@ -89,7 +89,8 @@ class Orchestrator:
                 "Only one of 'figure' or 'image' can be provided, not both.",
             )
 
-        if data is not None:
+        if data is not None and self.data_extractors:
+            logger.info("Enriching prompts with data extractors...")
             for extractor in self.data_extractors:
                 try:
                     features = extractor.extract(data)
@@ -107,6 +108,9 @@ class Orchestrator:
             description: str | GeneratorOutput = ""
             evaluation: list[CriterionEvaluatorOutput] = []
             for i in range(self.max_iterations):
+                logger.info(
+                    "Starting orchestration iteration %d/%d", i + 1, self.max_iterations
+                )
                 description = self.generator_agent.generate(
                     figure=figure,
                     image=image,
@@ -127,8 +131,31 @@ class Orchestrator:
                 )
 
                 if self._verify_evaluation_passes(evaluation):
+                    logger.info(
+                        "All criteria met, orchestration completed successfully",
+                        extra={
+                            "description_length": len(description),
+                            "iteration": i + 1,
+                            "final_scores": {
+                                eval_result.name: eval_result.score
+                                for eval_result in evaluation
+                            },
+                        },
+                    )
                     return description
 
+                unmet_criteria = [
+                    c for c in evaluation if c.score < self.criteria_threshold
+                ]
+                logger.debug(
+                    "Providing feedback for iteration %d",
+                    i + 1,
+                    extra={
+                        "iteration": i + 1,
+                        "unmet_criteria": [c.name for c in unmet_criteria],
+                        "unmet_scores": {c.name: c.score for c in unmet_criteria},
+                    },
+                )
                 self._provide_feedback_to_generator(i + 1, description, evaluation)
 
             logger.info(

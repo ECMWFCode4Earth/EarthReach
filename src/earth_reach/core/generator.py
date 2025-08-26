@@ -15,7 +15,10 @@ import earthkit.plots as ekp
 from PIL import Image
 from PIL.ImageFile import ImageFile
 
+from earth_reach.config.logging import get_logger
 from earth_reach.core.llm import LLMInterface
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -164,7 +167,6 @@ class GeneratorAgent:
                 "Only one of 'figure' or 'image' can be provided, not both.",
             )
         if figure is not None:
-            # TODO(medium): If metadata extraction fails at any point, generate image and continue without figure metadata
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
                 self.user_prompt,
@@ -183,8 +185,16 @@ class GeneratorAgent:
                 image=image,
             )
 
+            logger.debug("Parsing LLM response for structured output")
             parsed_output = self.parse_llm_response(response)
             if not parsed_output.is_complete():
+                logger.warning(
+                    "LLM response parsing incomplete",
+                    extra={
+                        "missing_fields": parsed_output.get_missing_fields(),
+                        "total_fields": len(list(fields(parsed_output))),
+                    },
+                )
                 raise ValueError(
                     "Parsed output is incomplete. Missing fields: "
                     f"{parsed_output.get_missing_fields()}",
@@ -200,6 +210,7 @@ class GeneratorAgent:
         except Exception as e:
             raise RuntimeError(f"Failed to generate response: {e}") from e
 
+        logger.info("Generator successfully generated a description")
         return description
 
     def parse_llm_response(self, response: str) -> GeneratorOutput:
@@ -261,6 +272,17 @@ class GeneratorAgent:
         metadata.xlabel = axes[0].get_xlabel()
         metadata.ylabel = axes[0].get_ylabel()
         metadata.domain = figure._domain
+
+        logger.debug(
+            "Extracted metadata from figure",
+            extra={
+                "title": metadata.title or "None",
+                "domain": metadata.domain or "None",
+                "xlabel": metadata.xlabel or "None",
+                "ylabel": metadata.ylabel or "None",
+            },
+        )
+
         return metadata
 
     def _update_user_prompt_with_metadata(

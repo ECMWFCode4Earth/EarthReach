@@ -210,14 +210,10 @@ class CLI:
             ValueError: If arguments are invalid or conflicting
             RuntimeError: If description generation fails
         """
+        logger.info("Starting description generation...")
         try:
-            if verbose:
-                logger.info(f"Validating image: {image_path}")
             validated_image_path = validate_image_path(image_path)
             image = Image.open(validated_image_path)
-
-            if verbose:
-                logger.info("Resolving prompts...")
 
             system_prompt_text = resolve_prompt(
                 system_prompt,
@@ -237,16 +233,23 @@ class CLI:
             if verbose:
                 if system_prompt_text:
                     logger.info(
-                        f"System prompt length: {len(system_prompt_text)} characters",
+                        "System prompt length: %d characters", len(system_prompt_text)
                     )
 
                 if user_prompt_text:
                     logger.info(
-                        f"User prompt length: {len(user_prompt_text)} characters",
+                        "User prompt length: %d characters", len(user_prompt_text)
                     )
 
-            if verbose:
-                logger.info("Initializing LLM...")
+            logger.debug(
+                "CLI configuration for generation",
+                extra={
+                    "provider": os.getenv("LLM_PROVIDER", "groq"),
+                    "simple_mode": simple,
+                    "max_iterations": max_iterations,
+                    "criteria_threshold": criteria_threshold,
+                },
+            )
             llm = create_llm()
 
             if verbose:
@@ -278,7 +281,7 @@ class CLI:
                 )
 
             if verbose:
-                logger.info(f"Generating description for: {validated_image_path.name}")
+                logger.info("Generating description for: %s", validated_image_path.name)
 
             if simple:
                 description = generator.generate(
@@ -290,7 +293,7 @@ class CLI:
 
             if verbose and isinstance(description, str):
                 logger.info("Description generated successfully!")
-                logger.info(f"Description length: {len(description)} characters")
+                logger.info("Description length: %d characters", len(description))
                 logger.info("-" * 50)
 
             print(description)
@@ -298,13 +301,13 @@ class CLI:
             return
 
         except (OSError, FileNotFoundError, ValueError) as e:
-            logger.error(f"Could not load image file: {e}", exc_info=True)
+            logger.error("Could not load image file: %s", e, exc_info=True)
             sys.exit(1)
         except RuntimeError as e:
-            logger.error(f"Generation failed: {e}", exc_info=True)
+            logger.error("Generation failed: %s", e, exc_info=True)
             sys.exit(1)
         except Exception as e:
-            logger.error(f"Unexpected error: {e}", exc_info=True)
+            logger.error("Unexpected error: %s", e, exc_info=True)
             sys.exit(1)
 
     @staticmethod
@@ -333,18 +336,13 @@ class CLI:
             ValueError: If arguments are invalid or conflicting
             RuntimeError: If evaluation fails
         """
+        logger.info("Starting description evaluation...")
+
         if criteria is None:
             criteria = ["coherence", "fluency", "consistency", "relevance"]
-
         try:
-            if verbose:
-                logger.info(f"Validating image: {image_path}")
-
             validated_image_path = validate_image_path(image_path)
             image = Image.open(validated_image_path)
-
-            if verbose:
-                logger.info("Resolving description...")
 
             description_text = resolve_description(
                 description,
@@ -356,7 +354,7 @@ class CLI:
                 )
 
             if verbose:
-                logger.info(f"Description length: {len(description_text)} characters")
+                logger.info("Description length: %d characters", len(description_text))
 
             if not criteria or len(criteria) == 0:
                 raise ValueError("Criteria list cannot be empty.")
@@ -369,10 +367,18 @@ class CLI:
                 )
 
             if verbose:
-                logger.info(f"Evaluation criteria: {', '.join(criteria)}")
+                logger.info("Evaluation criteria: %s", ", ".join(criteria))
 
             if verbose:
                 logger.info("Initializing LLM...")
+
+            logger.debug(
+                "CLI configuration for evaluation",
+                extra={
+                    "provider": os.getenv("LLM_PROVIDER", "groq"),
+                    "criteria": criteria,
+                },
+            )
             llm = create_llm()
 
             if verbose:
@@ -383,7 +389,7 @@ class CLI:
             )
 
             if verbose:
-                logger.info(f"Evaluating description for: {validated_image_path.name}")
+                logger.info("Evaluating description for: %s", validated_image_path.name)
             evaluation = evaluator.evaluate(
                 description=description_text,
                 image=image,
@@ -391,7 +397,7 @@ class CLI:
 
             if verbose:
                 logger.info("Evaluation completed successfully!")
-                logger.info(f"Number of criteria evaluated: {len(evaluation)}")
+                logger.info("Number of criteria evaluated: %d", len(evaluation))
                 logger.info("-" * 50)
 
             for eval in evaluation:
@@ -404,13 +410,13 @@ class CLI:
             return
 
         except FileNotFoundError as e:
-            logger.error(f"File not found: {e}", exc_info=True)
+            logger.error("File not found: %s", e, exc_info=True)
             sys.exit(1)
         except ValueError as e:
-            logger.error(f"Invalid input: {e}", exc_info=True)
+            logger.error("Invalid input: %s", e, exc_info=True)
             sys.exit(1)
         except Exception as e:
-            logger.error(f"Evaluation failed: {e}", exc_info=True)
+            logger.error("Evaluation failed: %s", e, exc_info=True)
             sys.exit(1)
 
 

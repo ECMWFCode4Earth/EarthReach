@@ -83,7 +83,6 @@ class CriterionEvaluator:
                 "Only one of 'figure' or 'image' can be provided, not both.",
             )
         if figure is not None:
-            # TODO(medium): If metadata extraction fails, continue without it
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
                 self.user_prompt,
@@ -409,13 +408,23 @@ class EvaluatorAgent:
         try:
             evaluations = []
             for evaluator in self.evaluators:
+                logger.debug("Evaluating criterion: %s", evaluator.criterion)
                 result = evaluator.evaluate(
                     description=description,
                     figure=figure,
                     image=image,
                 )
+                logger.debug(
+                    "Criterion evaluation completed",
+                    extra={
+                        "criterion": result.name,
+                        "score": result.score,
+                        "max_score": 5,
+                    },
+                )
                 evaluations.append(result)
 
+            logger.info("Evaluator successfully evaluated the description")
             return evaluations
         except Exception as e:
             raise RuntimeError(f"Failed to evaluate description: {e}") from e

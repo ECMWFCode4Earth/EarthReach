@@ -113,7 +113,7 @@ class EarthReachAgent:
         Raises:
             RuntimeError: If extractor creation fails
         """
-        logger.info("Creating data extractors...")
+        logger.debug("Creating data extractors...")
         extractors = []
 
         available_vars = set()
@@ -183,13 +183,16 @@ class EarthReachAgent:
         except Exception as e:
             raise RuntimeError(f"Failed to setup components: {e}") from e
 
-    def generate_alt_description(self, figure: ekp.Figure, data: ekd.FieldList) -> str:
+    def generate_alt_description(
+        self, figure: ekp.Figure, data: ekd.FieldList, use_extractors: bool = False
+    ) -> str:
         """
         Generate alternative text description for a weather chart.
 
         Args:
             figure: earthkit.plots Figure object containing the weather chart
             data: earthkit.data FieldList containing GRIB meteorological data
+            use_extractors: Whether to use data extractors to enrich prompt or not. Default to False
 
         Returns:
             String description of the weather chart
@@ -200,11 +203,15 @@ class EarthReachAgent:
             RuntimeError: If description generation fails
         """
         try:
-            logger.info("Starting weather chart description generation")
+            logger.info("Starting description generation...")
 
             self._validate_inputs(figure, data)
 
-            data_extractors = self._create_data_extractors(data)
+            if use_extractors:
+                logger.info("Creating data extractors to enrich prompts")
+                data_extractors = self._create_data_extractors(data)
+            else:
+                data_extractors = []
 
             orchestrator = self._setup_components(data_extractors)
 

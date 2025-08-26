@@ -16,11 +16,19 @@ from google import genai
 from google.genai import types
 from PIL.ImageFile import ImageFile
 
+from earth_reach.config.logging import get_logger
 from earth_reach.core.utils import img_to_base64, img_to_bytes
+
+logger = get_logger(__name__)
 
 
 class LLMInterface(ABC):
     """Abstract base class defining the interface for all LLM provider implementations."""
+
+    @property
+    @abstractmethod
+    def provider_name(self) -> str:
+        """Must be implemented by subclasses to return the provider name."""
 
     @abstractmethod
     def generate(
@@ -72,6 +80,10 @@ class OpenAICompatibleLLM(LLMInterface):
             base_url=base_url,
             api_key=api_key,
         )
+
+    @property
+    def provider_name(self):
+        return "openAICompatible"
 
     def generate(
         self,
@@ -139,13 +151,31 @@ class OpenAICompatibleLLM(LLMInterface):
                     "The generated response content is empty or not a string"
                 )
 
+            logger.info(
+                "LLM API call completed successfully",
+                extra={
+                    "provider": self.provider_name,
+                    "model": self.model_name,
+                    "input_length": len(user_prompt),
+                    "output_length": len(content),
+                    "has_image": image is not None,
+                },
+            )
+
             return content.strip()
 
         except ValueError:
             raise
         except Exception as e:
-            error_msg = f"API call failed: {type(e).__name__}: {e}"
-            raise RuntimeError(error_msg) from e
+            logger.error(
+                "LLM API call failed",
+                extra={
+                    "provider": self.provider_name,
+                    "model": self.model_name,
+                },
+                exc_info=True,
+            )
+            raise RuntimeError("LLM API call failed") from e
 
     def __repr__(self) -> str:
         return f"LLM(model_name={self.model_name}, base_url={self.base_url})"
@@ -180,6 +210,10 @@ class GroqLLM(OpenAICompatibleLLM):
             base_url="https://api.groq.com/openai/v1",
         )
 
+    @property
+    def provider_name(self):
+        return "groq"
+
 
 class OpenAILLM(OpenAICompatibleLLM):
     """Implementation of the LLMInterface for OpenAI API Provider."""
@@ -210,6 +244,10 @@ class OpenAILLM(OpenAICompatibleLLM):
             base_url="https://api.openai.com/v1",
         )
 
+    @property
+    def provider_name(self):
+        return "openAI"
+
 
 class GeminiLLM(LLMInterface):
     """Implementation of the LLMInterface for Google Gemini API Provider."""
@@ -235,6 +273,10 @@ class GeminiLLM(LLMInterface):
         self.model_name = model_name
         self.api_key = api_key
         self.client = genai.Client(api_key=api_key)
+
+    @property
+    def provider_name(self):
+        return "gemini"
 
     def generate(
         self,
@@ -296,13 +338,31 @@ class GeminiLLM(LLMInterface):
                     "The generated response content is empty or not a string"
                 )
 
+            logger.info(
+                "LLM API call completed successfully",
+                extra={
+                    "provider": self.provider_name,
+                    "model": self.model_name,
+                    "input_length": len(user_prompt),
+                    "output_length": len(content),
+                    "has_image": image is not None,
+                },
+            )
+
             return content.strip()
 
         except ValueError:
             raise
         except Exception as e:
-            error_msg = f"API call failed: {type(e).__name__}: {e}"
-            raise RuntimeError(error_msg) from e
+            logger.error(
+                "LLM API call failed",
+                extra={
+                    "provider": self.provider_name,
+                    "model": self.model_name,
+                },
+                exc_info=True,
+            )
+            raise RuntimeError("LLM API call failed") from e
 
     def __repr__(self) -> str:
         return f"GeminiLLM(model_name={self.model_name})"
