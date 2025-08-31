@@ -3,7 +3,7 @@ curl http://localhost:8000/v1/chat/completions \
     -H "Authorization: Bearer ${VLLM_SERVER_API_KEY}" \
     -d '{
         "model": "${MODEL_NAME}",
-	"messages": [
+	      "messages": [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Who won the world series in 2020?"}
         ]
