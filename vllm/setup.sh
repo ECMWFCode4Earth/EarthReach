@@ -44,11 +44,11 @@ sudo nvidia-ctk runtime configure --runtime=docker
 # Restart docker
 sudo systemctl docker restart
 
-# Create necessary Caddy directories
-mkdir -p $CADDY_DATA_DIR $CADDY_CONFIG_DIR
+# Create necessary Traefik directories
+mkdir -p $TRAEFIK_ROOT_DIR/traefik/cert
 
-# Copy the Caddyfile to the config directory
-cp ./Caddyfile $CADDY_FILE_PATH
+# Set proper permissions for the certificate storage
+chmod 600 $TRAEFIK_ROOT_DIR/traefik/cert
 
 # Install uv python manager
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -59,5 +59,8 @@ mkdir -p $HF_CACHE_DIR
 # Install HF-CLI and download the model to the cache directory
 uv run --with "huggingface_hub[cli]" huggingface-cli login --token $HF_HUB_TOKEN
 uv run --with "huggingface_hub[cli]" huggingface-cli download $MODEL_NAME --cache-dir=$HF_CACHE_DIR
+
+# Set MODEL_DIR_PATH environment variable to point to the downloaded model
+export MODEL_DIR_PATH="$HF_CACHE_DIR/models--$(echo $MODEL_NAME | tr '/' '-')/snapshots/$(ls $HF_CACHE_DIR/models--$(echo $MODEL_NAME | tr '/' '-')/snapshots/ | head -1)"
 
 echo "Setup complete! You can now run 'sudo docker compose up -d'"
