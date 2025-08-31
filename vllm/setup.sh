@@ -11,7 +11,6 @@ sudo systemctl start firewalld
 sudo systemctl enable firewalld
 
 # Add SSH, HTTP and HTTPS services
-# TODO(high): update to only accept requests from cloudflare servers for requests other than SSH
 sudo firewall-cmd --permanent --add-service=ssh
 sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --permanent --add-service=https
@@ -45,7 +44,6 @@ sudo nvidia-ctk runtime configure --runtime=docker
 # Restart docker
 sudo systemctl docker restart
 
-# TODO(medium): replace caddy automated configuration with traefik
 # Create necessary Caddy directories
 mkdir -p $CADDY_DATA_DIR $CADDY_CONFIG_DIR
 

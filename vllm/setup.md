@@ -32,8 +32,6 @@ sudo dnf upgrade
 
 Let's allow HTTP, HTTPS connections and deny the other types by default.
 
-TODO(high): update to only accept requests from cloudflare servers for requests other than SSH
-
 ```sh
 # Install firewalld
 sudo dnf install firewalld
@@ -94,7 +92,6 @@ sudo dnf install -y docker-ce \
 sudo systemctl enable --now docker
 ```
 
-TODO(medium): replace caddy configuration with traefik configuration instructions
 ### Caddy
 
 ```sh
