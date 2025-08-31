@@ -15,7 +15,6 @@ from earth_reach.config.logging import get_logger
 from earth_reach.core.evaluator import EvaluatorAgent
 from earth_reach.core.extractors.base_extractor import BaseDataExtractor
 from earth_reach.core.extractors.pressure_extractor import PressureCenterDataExtractor
-from earth_reach.core.extractors.temperature_extractor import TemperatureDataExtractor
 from earth_reach.core.generator import GeneratorAgent
 from earth_reach.core.llm import create_llm
 from earth_reach.core.orchestrator import Orchestrator
@@ -119,13 +118,6 @@ class EarthReachAgent:
             param = field.metadata("param")
             if param:
                 available_vars.add(param)
-
-        if "2t" in available_vars:
-            try:
-                extractors.append(TemperatureDataExtractor())
-                logger.debug("Temperature data extractor created")
-            except Exception as e:
-                logger.debug("Could not create temperature data extractor: %s", e)
 
         if "msl" in available_vars:
             try:

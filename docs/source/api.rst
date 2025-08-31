@@ -53,13 +53,6 @@ Base Extractor
    :members:
    :show-inheritance:
 
-Temperature Extractor
-~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: earth_reach.core.extractors.temperature_extractor
-   :members:
-   :show-inheritance:
-
 Pressure Extractor
 ~~~~~~~~~~~~~~~~~~
 
