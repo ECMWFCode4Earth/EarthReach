@@ -1,13 +1,24 @@
+"""
+Generator Agent module.
+
+This module provides the main structures and classes for generating descriptions from
+weather chart images or eathkit-plots figures.
+"""
+
 import re
+
 from dataclasses import dataclass, field, fields
 from io import BytesIO
-from typing import List
 
 import earthkit.plots as ekp
+
 from PIL import Image
 from PIL.ImageFile import ImageFile
 
-from earth_reach_agent.core.llm import BaseLLM
+from earth_reach.config.logging import get_logger
+from earth_reach.core.llm import LLMInterface
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -15,7 +26,8 @@ class FigureMetadata:
     """Metadata extracted from a figure."""
 
     title: str | None = field(
-        default=None, metadata={"description": "Figure title or heading"}
+        default=None,
+        metadata={"description": "Figure title or heading"},
     )
     xlabel: str | None = field(
         default=None,
@@ -26,9 +38,10 @@ class FigureMetadata:
         metadata={"description": "Y-axis label describing the vertical dimension"},
     )
     domain: str | None = field(
-        default=None, metadata={"description": "Geographic domain of the figure"}
+        default=None,
+        metadata={"description": "Geographic domain of the figure"},
     )
-    variables: List[str] | None = field(
+    variables: list[str] | None = field(
         default=None,
         metadata={"description": "Key variables shown in the figure"},
     )
@@ -51,6 +64,7 @@ class GeneratorOutput:
     step_2: str | None = None
     step_3: str | None = None
     step_4: str | None = None
+    step_5: str | None = None
     final_description: str | None = None
 
     def is_complete(self) -> bool:
@@ -65,7 +79,7 @@ class GeneratorOutput:
             for field in fields(self)
         )
 
-    def get_missing_fields(self) -> List[str]:
+    def get_missing_fields(self) -> list[str]:
         """
         Return list of field names that were not successfully parsed.
 
@@ -109,13 +123,16 @@ class GeneratorAgent:
     """GeneratorAgent class for generating weather charts scientific descriptions."""
 
     def __init__(
-        self, llm: BaseLLM, system_prompt: str | None, user_prompt: str
+        self,
+        llm: LLMInterface,
+        system_prompt: str | None,
+        user_prompt: str,
     ) -> None:
         """
-        Initialize the GeneratorAgent with a BaseLLM instance and prompts.
+        Initialize the GeneratorAgent with a LLMInterface instance and prompts.
 
         Args:
-            llm (BaseLLM): An instance of a BaseLLM to handle LLM interactions.
+            llm (LLMInterface): An instance of a LLMInterface to handle LLM interactions.
             system_prompt (str | None): Optional system prompt to guide the style of the LLM.
             user_prompt (str): The user prompt containing the instructions for description generation.
         """
@@ -124,14 +141,18 @@ class GeneratorAgent:
         self.user_prompt = user_prompt
 
     def generate(
-        self, figure: ekp.Figure | None = None, image: ImageFile | None = None
-    ) -> str:
+        self,
+        figure: ekp.Figure | None = None,
+        image: ImageFile | None = None,
+        return_intermediate_steps: bool = False,
+    ) -> str | GeneratorOutput:
         """
         Generate a structured weather description using the LLM.
 
         Args:
             figure (Figure | None): Optional figure to include in the request. Can't be used with image.
             image (ImageFile | None): Optional image to include in the request (will be converted to base64). Can't be used with figure.
+            return_intermediate_steps (bool): If True, return intermediate steps in the response.
 
         Returns:
             str: The final weather description.
@@ -143,18 +164,18 @@ class GeneratorAgent:
         """
         if figure is not None and image is not None:
             raise ValueError(
-                "Only one of 'figure' or 'image' can be provided, not both."
+                "Only one of 'figure' or 'image' can be provided, not both.",
             )
         if figure is not None:
-            # TODO(medium): If metadata extraction failes, continue without it
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
-                self.user_prompt, metadata
+                self.user_prompt,
+                metadata,
             )
             image = self._get_image_from_figure(figure)
         elif image is None and figure is None:
             raise ValueError(
-                "Either 'figure' or 'image' must be provided to generate a description."
+                "Either 'figure' or 'image' must be provided to generate a description.",
             )
 
         try:
@@ -164,19 +185,33 @@ class GeneratorAgent:
                 image=image,
             )
 
+            logger.debug("Parsing LLM response for structured output")
             parsed_output = self.parse_llm_response(response)
             if not parsed_output.is_complete():
+                logger.warning(
+                    "LLM response parsing incomplete",
+                    extra={
+                        "missing_fields": parsed_output.get_missing_fields(),
+                        "total_fields": len(list(fields(parsed_output))),
+                    },
+                )
                 raise ValueError(
                     "Parsed output is incomplete. Missing fields: "
-                    f"{parsed_output.get_missing_fields()}"
+                    f"{parsed_output.get_missing_fields()}",
                 )
 
+            if return_intermediate_steps:
+                return parsed_output
+
             description = parsed_output.final_description
+            if not description or not description.strip():
+                raise ValueError("Final description is empty or None.")
 
         except Exception as e:
             raise RuntimeError(f"Failed to generate response: {e}") from e
 
-        return description  # type: ignore[return-value]
+        logger.info("Generator successfully generated a description")
+        return description
 
     def parse_llm_response(self, response: str) -> GeneratorOutput:
         """
@@ -237,10 +272,23 @@ class GeneratorAgent:
         metadata.xlabel = axes[0].get_xlabel()
         metadata.ylabel = axes[0].get_ylabel()
         metadata.domain = figure._domain
+
+        logger.debug(
+            "Extracted metadata from figure",
+            extra={
+                "title": metadata.title or "None",
+                "domain": metadata.domain or "None",
+                "xlabel": metadata.xlabel or "None",
+                "ylabel": metadata.ylabel or "None",
+            },
+        )
+
         return metadata
 
     def _update_user_prompt_with_metadata(
-        self, user_prompt: str, metadata: FigureMetadata
+        self,
+        user_prompt: str,
+        metadata: FigureMetadata,
     ) -> str:
         """
         Update the user prompt with metadata extracted from the figure.
@@ -257,14 +305,15 @@ class GeneratorAgent:
             value = getattr(metadata, field_info.name)
             if value is not None:
                 description = field_info.metadata.get(
-                    "description", "No description available"
+                    "description",
+                    "No description available",
                 )
                 metadata_items.append(f"- {field_info.name} ({description}): {value}")
 
         if not metadata_items:
             return user_prompt
 
-        metadata_str = "# FIGURE METADATA\n\n"
+        metadata_str = "## FIGURE METADATA\n\n"
         metadata_str += "The following metadata was extracted from the figure:\n\n"
         metadata_str += "\n".join(metadata_items)
 

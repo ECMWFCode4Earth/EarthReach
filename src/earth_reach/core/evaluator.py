@@ -1,20 +1,29 @@
-import logging
+"""
+Evaluator Agent module.
+
+This module provides the main structure and classes for evaluating weather chart descriptions
+automatically against a set of quality criteria.
+"""
+
 import re
+
 from dataclasses import MISSING, dataclass, fields
 from io import BytesIO
-from typing import Any, List, Union, get_args, get_origin
+from typing import Any, Union, get_args, get_origin
 
 import earthkit.plots as ekp
+
 from PIL import Image
 from PIL.ImageFile import ImageFile
 
-from earth_reach_agent.core.generator import FigureMetadata
-from earth_reach_agent.core.llm import BaseLLM, create_llm
-from earth_reach_agent.core.prompts.evaluator import (
+from earth_reach.config.logging import get_logger
+from earth_reach.core.generator import FigureMetadata
+from earth_reach.core.llm import LLMInterface, create_llm
+from earth_reach.core.prompts.evaluator import (
     get_default_criterion_evaluator_user_prompt,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -40,16 +49,20 @@ class CriterionEvaluatorOutput:
         """
         return 0 <= self.score <= 5
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.is_score_valid():
             raise ValueError("Score must be between 0 and 5.")
 
 
 class CriterionEvaluator:
-    """Evaluator class for evaluating the quality of text based on a specified criterion."""
+    """Evaluator class for evaluating the quality of weather descriptions based on a specified criterion."""
 
     def __init__(
-        self, criterion: str, llm: BaseLLM, system_prompt: str | None, user_prompt: str
+        self,
+        criterion: str,
+        llm: LLMInterface,
+        system_prompt: str | None,
+        user_prompt: str,
     ) -> None:
         if criterion not in ["coherence", "fluency", "consistency", "relevance"]:
             raise ValueError(f"Unsupported criterion: {criterion}")
@@ -67,18 +80,18 @@ class CriterionEvaluator:
     ) -> CriterionEvaluatorOutput:
         if figure is not None and image is not None:
             raise ValueError(
-                "Only one of 'figure' or 'image' can be provided, not both."
+                "Only one of 'figure' or 'image' can be provided, not both.",
             )
         if figure is not None:
-            # TODO(medium): If metadata extraction fails, continue without it
             metadata = self._get_metadata_from_figure(figure)
             self.user_prompt = self._update_user_prompt_with_metadata(
-                self.user_prompt, metadata
+                self.user_prompt,
+                metadata,
             )
             image = self._get_image_from_figure(figure)
         elif image is None and figure is None:
             raise ValueError(
-                "Either 'figure' or 'image' must be provided to generate a description."
+                "Either 'figure' or 'image' must be provided to generate a description.",
             )
         try:
             user_prompt = (
@@ -128,14 +141,16 @@ class CriterionEvaluator:
                     content = match.group(1).strip()
                     if content:
                         converted_value = self.convert_to_field_type(
-                            content, field_name, field_type
+                            content,
+                            field_name,
+                            field_type,
                         )
                         extracted_values[field_name] = converted_value
             except Exception as e:
-                parsing_errors.append(f"Failed to parse field '{field_name}': {str(e)}")
+                parsing_errors.append(f"Failed to parse field '{field_name}': {e!s}")
 
         logger.warning(
-            f"Parsing errors encountered: {parsing_errors}"
+            f"Parsing errors encountered: {parsing_errors}",
         ) if parsing_errors else None
 
         required_fields = [
@@ -150,18 +165,21 @@ class CriterionEvaluator:
         missing_required = [f for f in required_fields if f not in extracted_values]
         if missing_required:
             raise ValueError(
-                f"Missing required fields in XML response: {missing_required}"
+                f"Missing required fields in XML response: {missing_required}",
             )
 
         try:
             return CriterionEvaluatorOutput(name=self.criterion, **extracted_values)
         except Exception as e:
             raise Exception(
-                f"Failed to create CriterionEvaluatorOutput instance: {str(e)}"
-            )
+                f"Failed to create CriterionEvaluatorOutput instance: {e!s}",
+            ) from e
 
     def convert_to_field_type(
-        self, content: str, field_name: str, field_type: Any
+        self,
+        content: str,
+        field_name: str,
+        field_type: Any,
     ) -> Any:
         """
         Convert string content to the appropriate type based on field type annotation.
@@ -190,36 +208,35 @@ class CriterionEvaluator:
         if field_type is int:
             try:
                 return int(content)
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
-                    f"Cannot convert '{content}' to integer for field '{field_name}'"
-                )
+                    f"Cannot convert '{content}' to integer for field '{field_name}'",
+                ) from e
 
         elif field_type is float:
             try:
                 return float(content)
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
-                    f"Cannot convert '{content}' to float for field '{field_name}'"
-                )
+                    f"Cannot convert '{content}' to float for field '{field_name}'",
+                ) from e
 
         elif field_type is bool:
             lower_content = content.lower().strip()
             if lower_content in ("true", "1", "yes", "on", "y"):
                 return True
-            elif lower_content in ("false", "0", "no", "off", "n"):
+            if lower_content in ("false", "0", "no", "off", "n"):
                 return False
-            else:
-                raise ValueError(
-                    f"Cannot convert '{content}' to boolean for field '{field_name}'. "
-                    f"Expected: true/false, 1/0, yes/no, on/off, y/n"
-                )
+            raise ValueError(
+                f"Cannot convert '{content}' to boolean for field '{field_name}'. "
+                f"Expected: true/false, 1/0, yes/no, on/off, y/n",
+            )
 
         elif field_type is str:
             return content
 
         else:
-            if hasattr(field_type, "__call__"):
+            if callable(field_type):
                 try:
                     return field_type(content)
                 except Exception:
@@ -252,7 +269,9 @@ class CriterionEvaluator:
         return metadata
 
     def _update_user_prompt_with_metadata(
-        self, user_prompt: str, metadata: FigureMetadata
+        self,
+        user_prompt: str,
+        metadata: FigureMetadata,
     ) -> str:
         """
         Update the user prompt with metadata extracted from the figure.
@@ -269,7 +288,8 @@ class CriterionEvaluator:
             value = getattr(metadata, field_info.name)
             if value is not None:
                 description = field_info.metadata.get(
-                    "description", "No description available"
+                    "description",
+                    "No description available",
                 )
                 metadata_items.append(f"- {field_info.name} ({description}): {value}")
 
@@ -297,18 +317,22 @@ class CriterionEvaluator:
         buffer.seek(0)
         return Image.open(buffer)
 
+    def append_user_prompt(self, text: str) -> None:
+        """Append additional text to the user prompt."""
+        self.user_prompt += f"\n\n{text.strip()}"
+
 
 class CriterionEvaluatorFactory:
     """Factory class for creating single criterion evaluator agents."""
 
     @staticmethod
-    def create(criterion: str, llm: BaseLLM | None = None) -> CriterionEvaluator:
+    def create(criterion: str, llm: LLMInterface | None = None) -> CriterionEvaluator:
         """
         Create a CriterionEvaluator instance based on the provided criterion.
 
         Args:
             criterion (str): Criterion name to create evaluators for.
-            llm (BaseLLM | None): Optional LLM instance to use for evaluation.
+            llm (LLMInterface | None): Optional LLM instance to use for evaluation.
 
         Returns:
             CriterionEvaluator: CriterionEvaluator instance.
@@ -322,20 +346,24 @@ class CriterionEvaluatorFactory:
         user_prompt = get_default_criterion_evaluator_user_prompt(criterion)
 
         return CriterionEvaluator(
-            criterion=criterion, llm=llm, system_prompt=None, user_prompt=user_prompt
+            criterion=criterion,
+            llm=llm,
+            system_prompt=None,
+            user_prompt=user_prompt,
         )
 
 
 class EvaluatorAgent:
     """Agent class for evaluating the quality of weather chart descriptions."""
 
-    def __init__(self, criteria: List[str], llm: BaseLLM | None = None) -> None:
+    def __init__(self, criteria: list[str], llm: LLMInterface | None = None) -> None:
         """
         Initialize the EvaluatorAgent.
 
         Args:
             criteria (List[str]): List of criteria to evaluate against.
                 Supported criteria: "coherence", "fluency", "consistency", "relevance".
+            llm (LLMInterface | None): Optional LLM instance to use for evaluation.
 
         Raises:
             ValueError: If an unsupported criterion is provided.
@@ -354,7 +382,7 @@ class EvaluatorAgent:
             ]
         except Exception as e:
             raise RuntimeError(
-                f"Failed to create evaluators for criteria {criteria}: {e}"
+                f"Failed to create evaluators for criteria {criteria}: {e}",
             ) from e
 
     def evaluate(
@@ -362,7 +390,7 @@ class EvaluatorAgent:
         description: str,
         figure: ekp.Figure | None = None,
         image: ImageFile | None = None,
-    ) -> List[CriterionEvaluatorOutput]:
+    ) -> list[CriterionEvaluatorOutput]:
         """
         Evaluate the given text against the specified criteria.
 
@@ -374,43 +402,34 @@ class EvaluatorAgent:
         """
         if figure is not None and image is not None:
             raise ValueError(
-                "Only one of 'figure' or 'image' can be provided, not both."
+                "Only one of 'figure' or 'image' can be provided, not both.",
             )
 
         try:
             evaluations = []
             for evaluator in self.evaluators:
+                logger.debug("Evaluating criterion: %s", evaluator.criterion)
                 result = evaluator.evaluate(
-                    description=description, figure=figure, image=image
+                    description=description,
+                    figure=figure,
+                    image=image,
+                )
+                logger.debug(
+                    "Criterion evaluation completed",
+                    extra={
+                        "criterion": result.name,
+                        "score": result.score,
+                        "max_score": 5,
+                    },
                 )
                 evaluations.append(result)
 
+            logger.info("Evaluator successfully evaluated the description")
             return evaluations
         except Exception as e:
             raise RuntimeError(f"Failed to evaluate description: {e}") from e
 
-    def is_text_length_lesser_than_max(self, text: str, max_length: int = 1000) -> bool:
-        """
-        Check if the length of the text is lesser than the specified maximum length.
-
-        Args:
-            text (str): The text to check.
-            max_length (int): The maximum length of the text.
-
-        Returns:
-            bool: True if the text length is valid, False otherwise.
-        """
-        return len(text) <= max_length
-
-    def is_text_length_greater_than_min(self, text: str, min_length: int = 100) -> bool:
-        """
-        Check if the length of the text is greater than the specified minimum length.
-
-        Args:
-            text (str): The text to check.
-            min_length (int): The minimum length of the text.
-
-        Returns:
-            bool: True if the text length is more than the minimum, False otherwise.
-        """
-        return min_length <= len(text)
+    def append_user_prompt(self, text: str) -> None:
+        """Append additional text to the user prompt of each criterion evaluator."""
+        for evaluator in self.evaluators:
+            evaluator.user_prompt += f"\n\n{text.strip()}"

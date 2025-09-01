@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "earth-reach-agent"
+name = "earth-reach"
 version = "0.1.0"
 description = "EarthReach Agent: Dual-LLM Framework for Validated Meteorological Chart Descriptions"
 readme = "README.md"
@@ -12,24 +12,96 @@ dependencies = [
     "earthkit>=0.10.3",
     "earthkit-data>=0.13.8",
     "earthkit-plots>=0.3.1",
+    "scipy>=1.15.2",
     "openai>=1.77.0",
     "python-dotenv>=1.1.0",
     "hatchling>=1.27.0",
-    "fire @ git+https://github.com/google/python-fire.git@2025-03-23-ipython", # Fixes IPython v9.0 compatibility issue 
+    "fire @ git+https://github.com/google/python-fire.git@2025-03-23-ipython", # Fixes IPython v9.0 compatibility issue
+    "zarr>=3.1.1",
 ]
 
 [dependency-groups]
 dev = [
     "jupytext>=1.17.1",
     "ipykernel>=6.29.5",
+    "ruff>=0.12.7",
+    "pytest>=8.3.5",
+    "pre-commit>=4.0.1",
+    "mypy>=1.8.0",
+    "scipy-stubs>=1.16.1.0",
+    "sphinx>=8.2.3",
+    "sphinx-rtd-theme>=3.0.2",
+]
+
+[project.optional-dependencies]
+gemini = [
+    "google-genai>=1.27.0",
+]
+claude = [
+    "anthropic>=0.60.0",
+]
+all-models = [
+    "google-genai>=1.27.0",
+    "anthropic>=0.60.0"
 ]
 
 [project.scripts]
-earth-reach-agent = "earth_reach_agent.cli:cli"
-era = "earth_reach_agent.cli:cli"
+earth-reach-agent = "earth_reach.cli:cli"
+era = "earth_reach.cli:cli"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/earth_reach_agent"]
+packages = ["src/earth_reach"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+exclude = ["notebooks/"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "COM", # trailing commas
+    "Q",   # quotes
+    "SIM", # simplify
+    "RUF", # Ruff-specific rules
+    "PIE", # flake8-pie
+    "RET", # flake8-return
+    "TCH", # type-checking
+]
+ignore = [
+    "E501", # line too long, handled by formatter
+    "COM812", # trailing comma conflicts with formatter
+]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.isort]
+known-first-party = ["earth_reach"]
+force-single-line = false
+lines-between-types = 1
+split-on-trailing-comma = true
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+files = ["src/earth_reach"]
+
+# Auto type checking for untyped packages
+[[tool.mypy.overrides]]
+module = ["earthkit.*", "fire.*"]
+follow_untyped_imports = true
+warn_return_any = true

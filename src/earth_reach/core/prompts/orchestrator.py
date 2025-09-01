@@ -1,3 +1,10 @@
+"""
+Orchestrator prompts module.
+
+Contains default prompt templates used by the orchestrator component
+to provide feedback between generator and evaluator iterations.
+"""
+
 DEFAULT_FEEDBACK_TEMPLATE = """## EVALUATOR FEEDBACK
 
 Evaluation number: {evaluation_id}

@@ -11,7 +11,6 @@ sudo systemctl start firewalld
 sudo systemctl enable firewalld
 
 # Add SSH, HTTP and HTTPS services
-# TODO(high): update to only accept requests from cloudflare servers for requests other than SSH 
 sudo firewall-cmd --permanent --add-service=ssh
 sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --permanent --add-service=https
@@ -39,19 +38,18 @@ curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-
 # Install nvidia container toolkit
 sudo dnf install -y nvidia-container-toolkit
 
-# Configure the nvidia runtime for docker containers 
+# Configure the nvidia runtime for docker containers
 sudo nvidia-ctk runtime configure --runtime=docker
 
 # Restart docker
 sudo systemctl docker restart
 
-# TODO: replace caddy automated configuration with traefik
-# Create necessary Caddy directories
-mkdir -p $CADDY_DATA_DIR $CADDY_CONFIG_DIR
+# Create necessary Traefik directories
+mkdir -p $TRAEFIK_ROOT_DIR/traefik/cert
 
-# Copy the Caddyfile to the config directory
-cp ./Caddyfile $CADDY_FILE_PATH
- 
+# Set proper permissions for the certificate storage
+chmod 600 $TRAEFIK_ROOT_DIR/traefik/cert
+
 # Install uv python manager
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
@@ -60,6 +58,9 @@ mkdir -p $HF_CACHE_DIR
 
 # Install HF-CLI and download the model to the cache directory
 uv run --with "huggingface_hub[cli]" huggingface-cli login --token $HF_HUB_TOKEN
-uv run --with "huggingface_hub[cli]" huggingface-cli download $MODEL_NAME --cache-dir=$HF_CACHE_DIR 
+uv run --with "huggingface_hub[cli]" huggingface-cli download $MODEL_NAME --cache-dir=$HF_CACHE_DIR
+
+# Set MODEL_DIR_PATH environment variable to point to the downloaded model
+export MODEL_DIR_PATH="$HF_CACHE_DIR/models--$(echo $MODEL_NAME | tr '/' '-')/snapshots/$(ls $HF_CACHE_DIR/models--$(echo $MODEL_NAME | tr '/' '-')/snapshots/ | head -1)"
 
 echo "Setup complete! You can now run 'sudo docker compose up -d'"
