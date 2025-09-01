@@ -11,7 +11,6 @@ sudo systemctl start firewalld
 sudo systemctl enable firewalld
 
 # Add SSH, HTTP and HTTPS services
-
 sudo firewall-cmd --permanent --add-service=ssh
 sudo firewall-cmd --permanent --add-service=http
 sudo firewall-cmd --permanent --add-service=https
