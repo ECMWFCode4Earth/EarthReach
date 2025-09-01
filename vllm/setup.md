@@ -4,13 +4,26 @@ To setup this private LLM inference server, you will need:
 
 - To have access to a linux machine
 - Docker and docker compose installed
-- A domain name pointing towards your linux macine's public IP address
+- A domain name pointing towards your linux machine's public IP address (configured with Cloudflare for DNS and SSL)
+- A Cloudflare account with API access for DNS challenges
 
 ## Installation
 
 We provide a helper script `setup.sh` to facilitate the configuration. Please review it before using it.
 
-Please set the right values for the environment variables in a `vllm/.env` file (see `.env.example`).
+Please set the right values for the environment variables in a `vllm/.env` file (see `.env.example`):
+
+- `DOMAIN`: Your domain name (e.g., api.yourdomain.com)
+- `CF_DNS_TOKEN`: Cloudflare API token with DNS permissions
+- `CF_ACME_EMAIL`: Email address for Let's Encrypt certificates
+- `CF_IPS`: Cloudflare IP ranges for proxy protocol
+- `TRAEFIK_ROOT_DIR`: Directory for Traefik configuration and certificates
+- `HF_CACHE_DIR`: Directory for Hugging Face model cache
+- `MODEL_NAME`: The model to serve (e.g., "google/gemma-3-4b-it")
+- `MODEL_DIR_PATH`: Full path to the downloaded model directory
+- `HF_HUB_TOKEN`: Hugging Face Hub token for model access
+- `VLLM_SERVER_API_KEY`: API key for accessing the VLLM server
+- `VLLM_PORT`: Port for the VLLM server (default: 8000)
 
 ```sh
 chmod +x ./setup.sh
@@ -25,18 +38,16 @@ Start by making sure your server is up to date:
 
 ```sh
 # Search for updates and apply them
-sudo dnf upgrade 
+sudo dnf upgrade
 ```
 
 ### Firewall
 
 Let's allow HTTP, HTTPS connections and deny the other types by default.
 
-TODO(high): update to only accept requests from cloudflare servers for requests other than SSH 
-
 ```sh
-# Install firewalld 
-sudo dnf install firewalld 
+# Install firewalld
+sudo dnf install firewalld
 
 # Start and enable firewalld
 sudo systemctl start firewalld
@@ -71,7 +82,7 @@ curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-contai
 # Install nvidia container toolkit
 sudo dnf install -y nvidia-container-toolkit
 
-# Configure the nvidia runtime for docker containers 
+# Configure the nvidia runtime for docker containers
 sudo nvidia-ctk runtime configure --runtime=docker
 
 # Restart docker
@@ -94,16 +105,26 @@ sudo dnf install -y docker-ce \
 sudo systemctl enable --now docker
 ```
 
-TODO: replace caddy configuration with traefik configuration instructions
-### Caddy
+### Traefik
 
 ```sh
-# Create necessary Caddy directories
-mkdir -p $CADDY_DATA_DIR $CADDY_CONFIG_DIR
+# Create necessary Traefik directories
+mkdir -p $TRAEFIK_ROOT_DIR/traefik/cert
 
-# Copy the Caddyfile to the config directory
-cp Caddyfile $CADDY_FILE_PATH
+# Set proper permissions for the certificate storage
+chmod 600 $TRAEFIK_ROOT_DIR/traefik/cert
 ```
+
+### Cloudflare Configuration
+
+This setup uses Cloudflare for DNS management and SSL certificate provisioning via DNS challenges. You'll need:
+
+1. **Domain Configuration**: Your domain must be managed by Cloudflare
+2. **API Token**: Create a Cloudflare API token with the following permissions:
+   - Zone:Zone:Read
+   - Zone:DNS:Edit
+   - Zone:Zone Settings:Read
+3. **Trusted IPs**: Configure Cloudflare's IP ranges for proxy protocol (set in CF_IPS environment variable)
 
 ## Usage
 
@@ -112,6 +133,7 @@ Try requesting the server with:
 ```sh
 curl https://$DOMAIN/v1/completions \
     -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $VLLM_SERVER_API_KEY" \
     -d '{
         "model": "$MODEL_NAME",
         "prompt": "What's the weather like in Bologna ?",
@@ -119,3 +141,5 @@ curl https://$DOMAIN/v1/completions \
         "temperature": 0.1
     }'
 ```
+
+Note: Make sure to enable the Traefik labels in your docker-compose.yaml by uncommenting the labels section for the vllm-server service before running `docker compose up -d`.

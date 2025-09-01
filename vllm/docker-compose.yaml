@@ -31,7 +31,7 @@ services:
       #      - "traefik.http.routers.vllm-server.tls.domains[0].main=${DOMAIN}"
       #      - "traefik.http.routers.vllm-server.tls.domains[0].sans=*.${DOMAIN}"
       #      - "traefik.http.services.vllm-server.loadbalancer.server.port=${VLLM_PORT}"
-      
+
   traefik:
     image: traefik:v2.9
     container_name: traefik

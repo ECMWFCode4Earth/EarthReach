@@ -1,5 +1,11 @@
+"""
+Quality criteria module.
+
+Defines the evaluation criteria used to assess the quality of generated
+weather chart descriptions across multiple dimensions including coherence and accuracy.
+"""
+
 from enum import Enum
-from typing import List
 
 
 class QualityCriteria(Enum):
@@ -9,5 +15,5 @@ class QualityCriteria(Enum):
     RELEVANCE = "relevance"
 
     @classmethod
-    def list(cls) -> List[str]:
+    def list(cls) -> list[str]:
         return [criterion.value for criterion in cls]
